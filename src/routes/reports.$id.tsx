@@ -111,7 +111,8 @@ function ReportDetail() {
                   {STATUSES.map((s: Status) => (
                     <button
                       key={s}
-                      disabled={s === r.status}
+                      aria-current={s === r.status}
+                      onClickCapture={(e) => { if (s === r.status) e.stopPropagation(); }}
                       onClick={() => run(() => { setStatus(user, r.id, s, statusNote); setStatusNote(""); })}
                       className={`btn justify-start ${s === r.status ? "btn-navy" : "btn-outline"}`}
                     >{t.status[s]}</button>

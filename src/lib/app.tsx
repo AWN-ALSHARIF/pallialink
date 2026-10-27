@@ -65,5 +65,5 @@ export function useName() {
 export function useFmtDate() {
   const { lang } = useApp();
   return (iso: string) =>
-    new Date(iso).toLocaleString(lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB", { dateStyle: "medium", timeStyle: "short" });
+    new Date(iso).toLocaleString(lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", { dateStyle: "medium", timeStyle: "short" });
 }
