@@ -75,8 +75,8 @@ function Clinic() {
             <table className="w-full text-sm">
               <thead className="bg-muted/60 text-muted-foreground">
                 <tr className="text-start">
-                  {["ID", t.patient, t.pain, t.status.submitted === "" ? "" : t.allStatuses.replace(/.*/, ""), t.assignee, t.date].map((h, i) => (
-                    <th key={i} className="px-4 py-3 text-start font-semibold">{i === 3 ? "" : h}</th>
+                  {[t.reportId, t.patient, t.pain, t.statusCol, t.assignee, t.date].map((h) => (
+                    <th key={h} className="px-4 py-3 text-start font-semibold">{h}</th>
                   ))}
                 </tr>
               </thead>
