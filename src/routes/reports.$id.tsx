@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
@@ -148,7 +148,7 @@ function ReportDetail() {
   );
 }
 
-function Item({ label, children }: { label: string; children: React.ReactNode }) {
+function Item({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
       <dt className="text-xs font-semibold text-muted-foreground">{label}</dt>
