@@ -112,8 +112,7 @@ function ReportDetail() {
                     <button
                       key={s}
                       aria-current={s === r.status}
-                      onClickCapture={(e) => { if (s === r.status) e.stopPropagation(); }}
-                      onClick={() => run(() => { setStatus(user, r.id, s, statusNote); setStatusNote(""); })}
+                      onClick={() => s !== r.status && run(() => { setStatus(user, r.id, s, statusNote); setStatusNote(""); })}
                       className={`btn justify-start ${s === r.status ? "btn-navy" : "btn-outline"}`}
                     >{t.status[s]}</button>
                   ))}
