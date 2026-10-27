@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { HeartHandshake, Search, Stethoscope, UserCog } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
-import { listReports, patientById, STATUSES, userById, type Status } from "@/lib/store";
+import { listReports, patientById, PHYSICIANS, STATUSES, userById, type Report, type Status } from "@/lib/store";
+
+type Scope = "default" | "mine" | "escalated" | "all";
 
 export const Route = createFileRoute("/clinic")({
   head: () => ({
@@ -29,18 +31,31 @@ function Clinic() {
   const v = useStoreVersion();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<Status | "all">("all");
+  const [scope, setScope] = useState<Scope>("default");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const reports = useMemo(() => (user ? listReports(user) : []), [user, v]);
   if (!user) return null;
 
-  const filtered = reports.filter((r) => {
+  const scopes: { id: Scope; label: string }[] =
+    user.role === "nurse" ? [{ id: "default", label: t.scopeNew }, { id: "mine", label: t.scopeMine }, { id: "escalated", label: t.scopeEscalated }, { id: "all", label: t.scopeAll }]
+    : user.role === "physician" ? [{ id: "default", label: t.scopeMine }]
+    : [];
+  const inScopeFor = (sc: Scope, r: Report) => {
+    if (user.role === "admin" || sc === "all") return true;
+    if (user.role === "physician") return r.assigneeId === user.id;
+    if (sc === "mine") return r.assigneeId === user.id;
+    if (sc === "escalated") return PHYSICIANS.some((p) => p.id === r.assigneeId);
+    return r.status === "submitted" || r.assigneeId === user.id; // nurse default: new + mine
+  };
+  const filtered = reports.filter((r) => inScopeFor(scope, r)).filter((r) => {
     const p = patientById(r.patientId);
     const hay = `${r.id} ${p?.nameAr} ${p?.nameEn}`.toLowerCase();
     return (status === "all" || r.status === status) && hay.includes(q.trim().toLowerCase());
   });
-  const count = (s: Status) => reports.filter((r) => r.status === s).length;
+  const scoped = reports.filter((r) => user.role !== "physician" || r.assigneeId === user.id);
+  const count = (s: Status) => scoped.filter((r) => r.status === s).length;
   const stats = [
-    { label: t.totalReports, value: reports.length, tone: "text-navy" },
+    { label: t.totalReports, value: scoped.length, tone: "text-navy" },
     { label: t.awaiting, value: count("submitted"), tone: "text-warning" },
     { label: t.inProgress, value: count("acknowledged") + count("under_review") + count("follow_up"), tone: "text-primary" },
     { label: t.closedCount, value: count("closed"), tone: "text-success" },
@@ -49,7 +64,22 @@ function Clinic() {
 
   return (
     <AppShell>
-      <h1 className="text-3xl font-bold text-navy">{t.clinicalDashboard}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className={`grid size-11 place-items-center rounded-xl ${user.role === "physician" ? "bg-navy text-navy-foreground" : "bg-accent text-primary"}`}>
+          {user.role === "physician" ? <Stethoscope className="size-5" /> : user.role === "nurse" ? <HeartHandshake className="size-5" /> : <UserCog className="size-5" />}
+        </span>
+        <h1 className="text-3xl font-bold text-navy">{user.role === "nurse" ? t.nurseDashboard : user.role === "physician" ? t.physicianDashboard : t.adminDashboard}</h1>
+        {user.canApproveClosure && <span className="rounded-full bg-success/15 px-3 py-1 text-xs font-semibold">{t.closureAuthorized}</span>}
+      </div>
+      {scopes.length > 1 && (
+        <div className="mt-5 flex flex-wrap gap-2" role="tablist">
+          {scopes.map((s) => (
+            <button key={s.id} role="tab" aria-selected={scope === s.id} onClick={() => setScope(s.id)} className={`btn min-h-10 ${scope === s.id ? "btn-navy" : "btn-outline"}`}>
+              {s.label} <span className="rounded-full bg-background/20 px-2 text-xs">{reports.filter((r) => inScopeFor(s.id, r)).length}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="card p-5">

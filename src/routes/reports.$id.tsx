@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, ArrowRight } from "lucide-react";
-import { useState, type ReactNode } from "react";
-import { toast } from "sonner";
+import type { ReactNode } from "react";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
-import { addNote, assign, canAssign, canUpdateStatus, CLINICIANS, getReport, listReports, patientById, setStatus, STATUSES, userById, type Status } from "@/lib/store";
+import { getReport, listReports, patientById, userById } from "@/lib/store";
+import { ClinicalNotes, RoleActions } from "@/components/report-actions";
 
 export const Route = createFileRoute("/reports/$id")({
   head: ({ params }) => ({
@@ -29,8 +29,6 @@ function ReportDetail() {
   const name = useName();
   const fmt = useFmtDate();
   useStoreVersion();
-  const [note, setNote] = useState("");
-  const [statusNote, setStatusNote] = useState("");
   if (!user) return null;
   const Back = lang === "ar" ? ArrowRight : ArrowLeft;
   const r = getReport(user, id);
@@ -39,7 +37,6 @@ function ReportDetail() {
 
   const patient = patientById(r.patientId);
   const history = listReports(user).filter((x) => x.patientId === r.patientId);
-  const run = (fn: () => void) => { try { fn(); toast.success("✓"); } catch { toast.error(t.readOnly); } };
 
   return (
     <AppShell>
@@ -70,6 +67,8 @@ function ReportDetail() {
             </dl>
           </section>
 
+          <ClinicalNotes report={r} />
+
           <section className="card p-6">
             <h2 className="font-bold text-navy">{t.timeline}</h2>
             <ol className="mt-4 space-y-4 border-s-2 border-border ps-5">
@@ -82,6 +81,7 @@ function ReportDetail() {
                     {a.assigneeId && <strong>{name(userById(a.assigneeId))}</strong>}
                   </p>
                   {a.note && <p className="mt-1 rounded-lg bg-muted p-2 text-sm">{a.note}</p>}
+                  {a.plan && <p className="mt-1 rounded-lg bg-accent p-2 text-sm"><strong>{t.plan}:</strong> {a.plan}</p>}
                   <p className="mt-0.5 text-xs text-muted-foreground">{fmt(a.at)}</p>
                 </li>
               ))}
@@ -90,43 +90,7 @@ function ReportDetail() {
         </div>
 
         <aside className="space-y-6">
-          <section className="card space-y-3 p-5">
-            <h2 className="font-bold text-navy">{t.assignTo}</h2>
-            <select
-              className="field"
-              disabled={!canAssign(user)}
-              value={r.assigneeId ?? ""}
-              onChange={(e) => e.target.value && run(() => assign(user, r.id, e.target.value))}
-            >
-              <option value="">{t.unassigned}</option>
-              {CLINICIANS.filter((c) => patient?.careTeam.includes(c.id)).map((c) => <option key={c.id} value={c.id}>{name(c)}</option>)}
-            </select>
-          </section>
-
-          <section className="card space-y-3 p-5">
-            <h2 className="font-bold text-navy">{t.updateStatus}</h2>
-            {canUpdateStatus(user) ? (
-              <>
-                <div className="grid gap-2">
-                  {STATUSES.map((s: Status) => (
-                    <button
-                      key={s}
-                      aria-current={s === r.status}
-                      onClick={() => s !== r.status && run(() => { setStatus(user, r.id, s, statusNote); setStatusNote(""); })}
-                      className={`btn justify-start ${s === r.status ? "btn-navy" : "btn-outline"}`}
-                    >{t.status[s]}</button>
-                  ))}
-                </div>
-                <textarea rows={2} value={statusNote} onChange={(e) => setStatusNote(e.target.value)} placeholder={t.notePh} className="field" />
-              </>
-            ) : <p className="text-sm text-muted-foreground">{t.readOnly}</p>}
-          </section>
-
-          <section className="card space-y-3 p-5">
-            <h2 className="font-bold text-navy">{t.addNote}</h2>
-            <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.notePh} className="field" />
-            <button disabled={!note.trim()} className="btn btn-primary w-full" onClick={() => run(() => { addNote(user, r.id, note); setNote(""); })}>{t.save}</button>
-          </section>
+          <RoleActions user={user} report={r} />
 
           <section className="card p-5">
             <h2 className="font-bold text-navy">{t.symptomHistory}</h2>
