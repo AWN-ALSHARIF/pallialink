@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { subscribe, userById, type User } from "./store";
 import { dict, type Lang } from "./i18n";
 
@@ -49,11 +49,11 @@ export function useApp() {
 /** Re-render whenever the demo store changes. */
 export function useStoreVersion() {
   const [v, setV] = useState(0);
-  useSyncExternalStore(
-    (cb) => subscribe(() => { setV((x) => x + 1); cb(); }),
-    () => v,
-    () => 0,
-  );
+  useEffect(() => {
+    setV((x) => x + 1);
+    const un = subscribe(() => setV((x) => x + 1));
+    return () => { un(); };
+  }, []);
   return v;
 }
 
