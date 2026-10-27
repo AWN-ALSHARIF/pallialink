@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { AppShell, Disclaimer, PainPill, StatusBadge } from "@/components/shell";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
-import { listReports, patientById } from "@/lib/store";
+import { listReports, patientById, STATUSES, type Status } from "@/lib/store";
 
 export const Route = createFileRoute("/patient")({
   head: () => ({
@@ -37,14 +37,14 @@ function PatientHome() {
           <p className="text-muted-foreground">{t.hello}،</p>
           <h1 className="text-3xl font-bold text-navy">{name(user)}</h1>
         </div>
-        <Link to="/patient/report" className="btn btn-primary min-h-14 px-7 text-lg"><Plus className="size-5" /> {t.newReport}</Link>
+        <Link to="/report" className="btn btn-primary min-h-14 px-7 text-lg"><Plus className="size-5" /> {t.newReport}</Link>
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <div className="card p-5">
           <div className="text-sm text-muted-foreground">{t.patientOverview}</div>
           <div className="mt-1 text-xl font-bold text-navy">{name(patient)}</div>
-          <div className="mt-1 text-sm text-muted-foreground">{t.age}: {patient?.age} · {patient && (t === undefined ? "" : name({ nameAr: patient.conditionAr, nameEn: patient.conditionEn }))}</div>
+          <div className="mt-1 text-sm text-muted-foreground">{t.age}: {patient?.age} · {patient && name({ nameAr: patient.conditionAr, nameEn: patient.conditionEn })}</div>
         </div>
         <div className="card p-5">
           <div className="text-sm text-muted-foreground">{t.openReports}</div>
@@ -78,7 +78,6 @@ function PatientHome() {
   );
 }
 
-import { STATUSES, type Status } from "@/lib/store";
 function StatusProgress({ status }: { status: Status }) {
   const idx = STATUSES.indexOf(status);
   return (
