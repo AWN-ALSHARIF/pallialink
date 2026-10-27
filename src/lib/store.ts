@@ -12,7 +12,7 @@ export interface User {
   role: Role;
   nameAr: string;
   nameEn: string;
-  patientId?: string; // patient self, or caregiver's linked patient
+  patientId?: string | undefined; // patient self, or caregiver's linked patient
 }
 export interface Patient {
   id: string;
@@ -28,8 +28,8 @@ export interface Activity {
   byUserId: string;
   type: "created" | "status" | "assigned" | "note";
   status?: Status;
-  assigneeId?: string;
-  note?: string;
+  assigneeId?: string | undefined;
+  note?: string | undefined;
 }
 export interface Report {
   id: string;
@@ -40,7 +40,7 @@ export interface Report {
   symptoms: Symptom[];
   notes: string;
   status: Status;
-  assigneeId?: string;
+  assigneeId?: string | undefined;
   activity: Activity[];
 }
 interface DB { reports: Report[]; seq: number }
