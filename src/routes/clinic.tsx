@@ -40,14 +40,14 @@ function Clinic() {
     user.role === "nurse" ? [{ id: "default", label: t.scopeNew }, { id: "mine", label: t.scopeMine }, { id: "escalated", label: t.scopeEscalated }, { id: "all", label: t.scopeAll }]
     : user.role === "physician" ? [{ id: "default", label: t.scopeMine }]
     : [];
-  const inScope = (r: Report) => {
-    if (user.role === "admin" || scope === "all") return true;
+  const inScopeFor = (sc: Scope, r: Report) => {
+    if (user.role === "admin" || sc === "all") return true;
     if (user.role === "physician") return r.assigneeId === user.id;
-    if (scope === "mine") return r.assigneeId === user.id;
-    if (scope === "escalated") return PHYSICIANS.some((p) => p.id === r.assigneeId);
+    if (sc === "mine") return r.assigneeId === user.id;
+    if (sc === "escalated") return PHYSICIANS.some((p) => p.id === r.assigneeId);
     return r.status === "submitted" || r.assigneeId === user.id; // nurse default: new + mine
   };
-  const filtered = reports.filter(inScope).filter((r) => {
+  const filtered = reports.filter((r) => inScopeFor(scope, r)).filter((r) => {
     const p = patientById(r.patientId);
     const hay = `${r.id} ${p?.nameAr} ${p?.nameEn}`.toLowerCase();
     return (status === "all" || r.status === status) && hay.includes(q.trim().toLowerCase());
@@ -75,7 +75,7 @@ function Clinic() {
         <div className="mt-5 flex flex-wrap gap-2" role="tablist">
           {scopes.map((s) => (
             <button key={s.id} role="tab" aria-selected={scope === s.id} onClick={() => setScope(s.id)} className={`btn min-h-10 ${scope === s.id ? "btn-navy" : "btn-outline"}`}>
-              {s.label} <span className="rounded-full bg-background/20 px-2 text-xs">{reports.filter((r) => { const prev = scope; void prev; return s.id === "all" || (s.id === "mine" ? r.assigneeId === user.id : s.id === "escalated" ? PHYSICIANS.some((p) => p.id === r.assigneeId) : r.status === "submitted" || r.assigneeId === user.id); }).length}</span>
+              {s.label} <span className="rounded-full bg-background/20 px-2 text-xs">{reports.filter((r) => inScopeFor(s.id, r)).length}</span>
             </button>
           ))}
         </div>
