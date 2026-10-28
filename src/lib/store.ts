@@ -62,8 +62,8 @@ export const USERS: User[] = [
   { id: "u-nurse", role: "nurse", nameAr: "الممرضة نورة القحطاني", nameEn: "Nurse Noura Al-Qahtani" },
   { id: "u-doc", role: "physician", nameAr: "د. فهد الزهراني", nameEn: "Dr. Fahad Al-Zahrani", canApproveClosure: true },
   { id: "u-doc2", role: "physician", nameAr: "د. لمى الغامدي", nameEn: "Dr. Lama Al-Ghamdi" },
-  { id: "u-xnurse", role: "nurse", nameAr: "ممرضة اختبار (منظمة أخرى)", nameEn: "Test Nurse (other organization)" },
-  { id: "u-admin", role: "admin", nameAr: "ريم الدوسري", nameEn: "Reem Al-Dosari" },
+  { id: "u-xnurse", role: "nurse", nameAr: "خالد العتيبي", nameEn: "Khalid Al-Otaibi" },
+  { id: "u-admin", role: "admin", nameAr: "عون الشريف", nameEn: "Awn Alsharif" },
 ];
 
 export const PATIENTS: Patient[] = [
