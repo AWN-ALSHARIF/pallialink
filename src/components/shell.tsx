@@ -78,6 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 const statusStyle: Record<Status, string> = {
   submitted: "bg-warning/15 text-foreground border-warning/40",
   acknowledged: "bg-accent text-accent-foreground border-primary/30",
+  awaiting_physician: "bg-warning/10 text-foreground border-navy/30",
   under_review: "bg-navy/10 text-navy border-navy/20",
   follow_up: "bg-primary/15 text-accent-foreground border-primary/40",
   closed: "bg-success/15 text-foreground border-success/40",

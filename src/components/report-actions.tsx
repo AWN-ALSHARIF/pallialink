@@ -1,10 +1,10 @@
 import { Lock, ShieldCheck } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useApp, useFmtDate, useName } from "@/lib/app";
 import {
   addAssessment, addNursingObservation, adminAssign, approveClosure, can, CLINICIANS, escalateToPhysician,
-  NURSES, nurseAcknowledge, patientById, physicianAcknowledge, PHYSICIANS, returnToNursing, userById,
+  listAssignablePhysicians, NURSES, nurseAcknowledge, patientById, physicianAcknowledge, returnToNursing, userById,
   type Report, type User,
 } from "@/lib/store";
 
@@ -40,10 +40,19 @@ function NurseActions({ user, r }: { user: User; r: Report }) {
   const name = useName();
   const run = useRun();
   const [obs, setObs] = useState("");
-  const careTeam = patientById(r.patientId)?.careTeam ?? [];
-  const docs = PHYSICIANS.filter((p) => careTeam.includes(p.id));
-  const [doc, setDoc] = useState(docs[0]?.id ?? "");
+  const [docs, setDocs] = useState<{ id: string; nameAr: string; nameEn: string }[]>([]);
+  const [doc, setDoc] = useState("");
   const [note, setNote] = useState("");
+  // Eligible physicians come from the server (active, same organization), not a hardcoded list.
+  useEffect(() => {
+    let live = true;
+    listAssignablePhysicians(r.id).then((list) => {
+      if (!live) return;
+      setDocs(list);
+      setDoc((cur) => cur || (list.find((d) => d.id !== r.assigneeId)?.id ?? list[0]?.id ?? ""));
+    }, () => live && setDocs([]));
+    return () => { live = false; };
+  }, [r.id, r.assigneeId]);
   return (
     <>
       {can(user, "nurseAck", r) && (
@@ -58,6 +67,7 @@ function NurseActions({ user, r }: { user: User; r: Report }) {
           {docs.map((d) => <option key={d.id} value={d.id}>{name(d)}</option>)}
         </select>
         <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.noteOptional} className="field" disabled={!can(user, "escalate", r)} />
+        {r.status === "submitted" && <Hint>{t.ackFirst}</Hint>}
         <button disabled={!doc || !can(user, "escalate", r) || r.assigneeId === doc} className="btn btn-navy w-full" onClick={() => run(() => escalateToPhysician(user, r.id, doc, note), () => setNote(""))}>{t.escalateBtn}</button>
       </Panel>
       <Hint>{t.physicianOnly}</Hint>

@@ -15,6 +15,13 @@
       "when": 1793186606280,
       "tag": "0001_restrict_app_users_select",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793188203397,
+      "tag": "0002_phase1_security_workflow",
+      "breakpoints": true
     }
   ]
 }

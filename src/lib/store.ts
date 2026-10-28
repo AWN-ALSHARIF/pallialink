@@ -2,8 +2,8 @@
 // UI depends only on these functions.
 
 export type Role = "patient" | "caregiver" | "nurse" | "physician" | "admin";
-export type Status = "submitted" | "acknowledged" | "under_review" | "follow_up" | "closed";
-export const STATUSES: Status[] = ["submitted", "acknowledged", "under_review", "follow_up", "closed"];
+export type Status = "submitted" | "acknowledged" | "awaiting_physician" | "under_review" | "follow_up" | "closed";
+export const STATUSES: Status[] = ["submitted", "acknowledged", "awaiting_physician", "under_review", "follow_up", "closed"];
 export const SYMPTOMS = ["nausea", "fatigue", "breathlessness", "sleep", "other"] as const;
 export type Symptom = (typeof SYMPTOMS)[number];
 
@@ -43,6 +43,10 @@ export interface Report {
   notes: string;
   status: Status;
   assigneeId?: string | undefined;
+  nurseAckBy?: string | undefined;
+  nurseAckAt?: string | undefined;
+  physicianAckBy?: string | undefined;
+  physicianAckAt?: string | undefined;
   activity: Activity[];
 }
 interface DB { reports: Report[]; seq: number }
@@ -77,7 +81,16 @@ export const __setReportsForTest = (reports: Report[]) => { cache = { reports, s
 
 async function sb() { return (await import("@/integrations/supabase/client")).supabase; }
 
-export async function refresh() {
+let inflight: Promise<void> | null = null;
+let lastRefresh = 0;
+/** Reload from the database; concurrent calls share one request. */
+export function refresh(): Promise<void> {
+  if (!inflight) inflight = doRefresh().finally(() => { inflight = null; lastRefresh = Date.now(); });
+  return inflight;
+}
+/** Focus-triggered reload, skipped if data is fresher than 15 s. */
+export function refreshIfStale() { return Date.now() - lastRefresh < 15000 ? Promise.resolve() : refresh(); }
+async function doRefresh() {
   const supabase = await sb();
   const { data: sess } = await supabase.auth.getSession();
   if (!sess.session) { cache = { reports: [], seq: 0 }; notify(); return; }
@@ -97,6 +110,7 @@ export async function refresh() {
     reports: (reps ?? []).map((r) => ({
       id: r.id, patientId: r.patient_id, submittedBy: r.submitted_by, createdAt: r.created_at, pain: r.pain,
       symptoms: r.symptoms as Symptom[], notes: r.notes, status: r.status as Status, assigneeId: r.assignee_id ?? undefined,
+      nurseAckBy: r.nurse_ack_by ?? undefined, nurseAckAt: r.nurse_ack_at ?? undefined, physicianAckBy: r.physician_ack_by ?? undefined, physicianAckAt: r.physician_ack_at ?? undefined,
       activity: byReport.get(r.id) ?? [],
     })),
   };
@@ -129,9 +143,11 @@ export async function signOut() {
 /** Persona of the current backend session, if any. */
 export async function currentPersonaId(): Promise<string | null> {
   const supabase = await sb();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return null;
-  const { data: row } = await supabase.from("app_users").select("persona_id").eq("auth_id", data.user.id).maybeSingle();
+  // Local session read (no network); the database re-validates the token on every query.
+  const { data } = await supabase.auth.getSession();
+  const uid = data.session?.user.id;
+  if (!uid) return null;
+  const { data: row } = await supabase.from("app_users").select("persona_id").eq("auth_id", uid).maybeSingle();
   return row?.persona_id ?? null;
 }
 
@@ -143,8 +159,7 @@ export function canViewPatient(user: User, patientId: string): boolean {
   if (user.role === "admin") return true;
   if (user.role === "patient" || user.role === "caregiver") return user.patientId === patientId;
   if (user.role === "physician") {
-    // Physicians only see patients with at least one report assigned to them.
-    return load().reports.some((r) => r.patientId === patientId && r.assigneeId === user.id);
+    return load().reports.some((r) => r.patientId === patientId && (r.assigneeId === user.id || r.physicianAckBy === user.id));
   }
   return PATIENTS.find((p) => p.id === patientId)?.careTeam.includes(user.id) ?? false;
 }
@@ -153,14 +168,14 @@ export const isAssignedTo = (user: User, r: Report) => r.assigneeId === user.id;
 export type Action = "nurseAck" | "nursingObs" | "escalate" | "physAck" | "assessment" | "returnToNursing" | "approveClosure" | "adminAssign";
 /** Single source of truth for which role may do what on a report. */
 export function can(user: User, action: Action, r: Report): boolean {
-  if (!canViewPatient(user, r.patientId)) return false;
+  if (!canViewReport(user, r)) return false;
   const open = r.status !== "closed";
   switch (action) {
     case "nurseAck": return user.role === "nurse" && r.status === "submitted";
     case "nursingObs": return user.role === "nurse" && open;
-    case "escalate": return user.role === "nurse" && open;
-    case "physAck": return user.role === "physician" && isAssignedTo(user, r) && (r.status === "submitted" || r.status === "acknowledged");
-    case "assessment": return user.role === "physician" && isAssignedTo(user, r) && open;
+    case "escalate": return user.role === "nurse" && (r.status === "acknowledged" || r.status === "awaiting_physician");
+    case "physAck": return user.role === "physician" && isAssignedTo(user, r) && r.status === "awaiting_physician";
+    case "assessment": return user.role === "physician" && isAssignedTo(user, r) && (r.status === "under_review" || r.status === "follow_up");
     case "returnToNursing": return user.role === "physician" && isAssignedTo(user, r) && open;
     case "approveClosure": return user.role === "physician" && !!user.canApproveClosure && isAssignedTo(user, r) && r.status === "follow_up";
     case "adminAssign": return user.role === "admin" && open;
@@ -171,11 +186,23 @@ export function visiblePatients(user: User) {
   return PATIENTS.filter((p) => canViewPatient(user, p.id));
 }
 export function listReports(user: User): Report[] {
-  return load().reports.filter((r) => canViewPatient(user, r.patientId)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return load().reports.filter((r) => canViewReport(user, r)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+/** Report-level visibility (mirrors the database rule): physicians see only reports assigned to / acknowledged by them. */
+export function canViewReport(user: User, r: Report): boolean {
+  if (user.role === "physician") return r.assigneeId === user.id || r.physicianAckBy === user.id;
+  return canViewPatient(user, r.patientId);
 }
 export function getReport(user: User, id: string): Report | undefined {
   const r = load().reports.find((x) => x.id === id);
-  return r && canViewPatient(user, r.patientId) ? r : undefined;
+  return r && canViewReport(user, r) ? r : undefined;
+}
+/** Eligible physicians for a report, from the protected server lookup (same organization, active). */
+export async function listAssignablePhysicians(reportId: string): Promise<{ id: string; nameAr: string; nameEn: string }[]> {
+  const supabase = await sb();
+  const { data, error } = await supabase.rpc("list_assignable_physicians", { p_report: reportId });
+  if (error) throw error;
+  return (data ?? []).map((d) => ({ id: d.persona_id, nameAr: d.name_ar, nameEn: d.name_en }));
 }
 
 async function rpcAction(id: string, action: Action, target?: string, note?: string, plan?: string) {

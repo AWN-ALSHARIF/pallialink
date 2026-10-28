@@ -1,5 +1,6 @@
 # Roadmap
-- [ ] Issue 1: separate nurse/physician acknowledgment, "بانتظار استلام الطبيب" status — waiting on user approval of revised SQL
-- [ ] Issue 2: performance fixes (indexes, deduped refresh, local session read)
-- [ ] Issue 3: show both physicians for nurse escalation
-- [ ] Revised migration: non-destructive, no seed reset, verified backfill, EXECUTE grants review — waiting on approval
+- [x] Phase 1: security, organizations, separate acknowledgments, "بانتظار استلام الطبيب" workflow, both physicians assignable
+- [x] Speed: merged reloads, focus reload throttle, local session read, new indexes
+- [ ] Phase 2: medical record (الملف الطبي) — waiting on user approval of Phase 2 SQL
+- [ ] Phase 3: synthetic demo medical records + test organization — waiting on approval
+- [ ] Pagination / lazy history loading and before/after timing — planned with Phase 2 screens
