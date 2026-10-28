@@ -104,11 +104,17 @@ async function doRefresh() {
   const supabase = await sb();
   const { data: sess } = await supabase.auth.getSession();
   if (!sess.session) { cache = { reports: [], seq: 0 }; notify(); return; }
-  const [{ data: reps, error: e1 }, { data: acts, error: e2 }] = await Promise.all([
+  const [{ data: reps, error: e1 }, { data: acts, error: e2 }, { data: me }, { data: pats }] = await Promise.all([
     supabase.from("reports").select("*"),
     supabase.from("report_activity").select("*").order("id"),
+    supabase.from("app_users").select("persona_id, can_approve_closure").eq("auth_id", sess.session.user.id).maybeSingle(),
+    supabase.from("patients").select("id, care_team"),
   ]);
   if (e1 || e2) throw e1 ?? e2;
+  // Admin-configurable values: mirror the live database so revocations / care-team changes show immediately.
+  const meUser = userById(me?.persona_id);
+  if (meUser) meUser.canApproveClosure = !!me?.can_approve_closure;
+  for (const p of pats ?? []) { const s = PATIENTS.find((x) => x.id === p.id); if (s) s.careTeam = p.care_team; }
   const byReport = new Map<string, Activity[]>();
   for (const a of acts ?? []) {
     const list = byReport.get(a.report_id) ?? [];
