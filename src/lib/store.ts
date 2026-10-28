@@ -59,17 +59,17 @@ export interface Report {
 interface DB { reports: Report[]; seq: number }
 
 export const USERS: User[] = [
-  { id: "u-pat", role: "patient", nameAr: "سارة العتيبي", nameEn: "Sarah Al-Otaibi", patientId: "p1" },
-  { id: "u-cg", role: "caregiver", nameAr: "خالد الحربي", nameEn: "Khalid Al-Harbi", patientId: "p2" },
-  { id: "u-nurse", role: "nurse", nameAr: "الممرضة نورة القحطاني", nameEn: "Nurse Noura Al-Qahtani" },
-  { id: "u-doc", role: "physician", nameAr: "د. فهد الزهراني", nameEn: "Dr. Fahad Al-Zahrani", canApproveClosure: true },
-  { id: "u-doc2", role: "physician", nameAr: "د. لمى الغامدي", nameEn: "Dr. Lama Al-Ghamdi" },
-  { id: "u-xnurse", role: "nurse", nameAr: "خالد العتيبي", nameEn: "Khalid Al-Otaibi" },
+  { id: "u-pat", role: "patient", nameAr: "رنا عبدالعزيز", nameEn: "Rana Abdulaziz", patientId: "p1" },
+  { id: "u-cg", role: "caregiver", nameAr: "طارق عبدالله", nameEn: "Tariq Abdullah", patientId: "p2" },
+  { id: "u-nurse", role: "nurse", nameAr: "الياس فارس", nameEn: "Elias Fares" },
+  { id: "u-doc", role: "physician", nameAr: "منوال خالد", nameEn: "Manwal Khaled", canApproveClosure: true },
+  { id: "u-doc2", role: "physician", nameAr: "ريما سالم", nameEn: "Reema Salem" },
+  { id: "u-xnurse", role: "nurse", nameAr: "تالين زياد", nameEn: "Taleen Ziyad" },
   { id: "u-admin", role: "admin", nameAr: "عون الشريف", nameEn: "Awn Alsharif" },
 ];
 
 export const PATIENTS: Patient[] = [
-  { id: "p1", nameAr: "سارة العتيبي", nameEn: "Sarah Al-Otaibi", age: 64, conditionAr: "رعاية تلطيفية منزلية", conditionEn: "Home palliative care", careTeam: ["u-nurse", "u-doc"] },
+  { id: "p1", nameAr: "رنا عبدالعزيز", nameEn: "Rana Abdulaziz", age: 64, conditionAr: "رعاية تلطيفية منزلية", conditionEn: "Home palliative care", careTeam: ["u-nurse", "u-doc"] },
   { id: "p2", nameAr: "عبدالله الحربي", nameEn: "Abdullah Al-Harbi", age: 78, conditionAr: "رعاية تلطيفية منزلية", conditionEn: "Home palliative care", careTeam: ["u-nurse", "u-doc"] },
   { id: "p3", nameAr: "منيرة الشهري", nameEn: "Munira Al-Shehri", age: 71, conditionAr: "رعاية تلطيفية منزلية", conditionEn: "Home palliative care", careTeam: ["u-nurse", "u-doc2"] },
 ];
