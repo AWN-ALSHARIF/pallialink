@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
-import { NewFollowUpForm, NewTaskForm, TaskStatusBadge } from "@/components/tasks";
+import { NewFollowUpForm, NewTaskForm } from "@/components/tasks";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { addEntry, loadRecord, openDocument, updateProfile, uploadDocument, WRITABLE, type Entry, type EntryKind, type Profile } from "@/lib/emr";
 import { useGuard } from "@/lib/guard";
