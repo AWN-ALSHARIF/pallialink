@@ -40,6 +40,58 @@ export function Disclaimer({ className }: { className?: string }) {
   );
 }
 
+function NotificationsBell() {
+  const { t, user } = useApp();
+  const name = useName();
+  const fmt = useFmtDate();
+  const [items, setItems] = useState<AppNotification[] | null>(null);
+  const [open, setOpen] = useState(false);
+  const clinical = !!user && isClinical(user.role);
+  const load = useCallback(() => {
+    if (clinical) listNotifications().then(setItems, () => {});
+  }, [clinical]);
+  useEffect(load, [load]);
+  useEffect(() => {
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [load]);
+  if (!clinical) return null;
+  const unread = (items ?? []).filter((n) => !n.readAt);
+  return (
+    <div className="relative">
+      <button className="btn btn-outline relative min-h-10 px-3" aria-label={t.notifications} title={t.notifications}
+        onClick={() => { setOpen(!open); if (!open) load(); }}>
+        <Bell className="size-4" />
+        {unread.length > 0 && <span className="absolute -top-1.5 -end-1.5 grid size-5 place-items-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">{unread.length}</span>}
+      </button>
+      {open && (
+        <div className="absolute end-0 top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border bg-background p-3 shadow-lg">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-navy">{t.notifications}</h2>
+            {unread.length > 0 && (
+              <button className="text-xs font-semibold text-primary" onClick={() => { void markNotificationsRead(unread.map((n) => n.id)).then(load); }}>
+                {t.markAllRead}
+              </button>
+            )}
+          </div>
+          <ul className="mt-2 max-h-80 space-y-2 overflow-y-auto text-sm">
+            {(items ?? []).map((n) => (
+              <li key={n.id} className={cn("rounded-lg border p-2.5", !n.readAt && "bg-accent/50")}>
+                <p className="font-medium">{t.notifKind[n.kind]}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {n.patientId ? `${name(patientById(n.patientId))} · ` : ""}{n.refId ? <span dir="ltr" className="font-mono">{n.refId}</span> : ""} · {fmt(n.createdAt)}
+                </p>
+              </li>
+            ))}
+            {items && items.length === 0 && <li className="py-3 text-center text-muted-foreground">{t.noNotifications}</li>}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, user, setUserId } = useApp();
   const name = useName();
@@ -56,6 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="text-xs text-muted-foreground">{t.roles[user.role]}</div>
               </div>
             )}
+            <NotificationsBell />
             <LangButton />
             <button className="btn btn-outline min-h-10 px-3" title={t.resetDemo} aria-label={t.resetDemo} onClick={() => { void resetDemo().catch(() => {}); }}>
               <RotateCcw className="size-4" />
