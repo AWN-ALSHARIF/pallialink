@@ -107,8 +107,11 @@ function Clinic() {
             <table className="w-full text-sm">
               <thead className="bg-muted/60 text-muted-foreground">
                 <tr className="text-start">
-                  {[t.reportId, t.patient, t.pain, t.statusCol, t.assignee, t.date].map((h) => (
-                    <th key={h} className="px-4 py-3 text-start font-semibold">{h}</th>
+                  {[
+                    { h: t.reportId, cls: "" }, { h: t.patient, cls: "" }, { h: t.pain, cls: "" },
+                    { h: t.statusCol, cls: "" }, { h: t.assignee, cls: "hidden md:table-cell" }, { h: t.date, cls: "hidden md:table-cell" },
+                  ].map(({ h, cls }) => (
+                    <th key={h} className={`px-4 py-3 text-start font-semibold ${cls}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -119,8 +122,8 @@ function Clinic() {
                     <td className="px-4 py-3 font-medium">{name(patientById(r.patientId))}</td>
                     <td className="px-4 py-3"><PainPill pain={r.pain} /></td>
                     <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.assigneeId ? name(userById(r.assigneeId)) : t.unassigned}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{fmt(r.createdAt)}</td>
+                    <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">{r.assigneeId ? name(userById(r.assigneeId)) : t.unassigned}</td>
+                    <td className="hidden whitespace-nowrap px-4 py-3 text-muted-foreground md:table-cell">{fmt(r.createdAt)}</td>
                   </tr>
                 ))}
                 {filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">{t.noReports}</td></tr>}
