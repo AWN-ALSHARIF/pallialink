@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, HeartHandshake, Search, Stethoscope, UserCog } from "lucide-react";
+import { ClipboardList, FileText, HeartHandshake, Search, Stethoscope, UserCog } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
+import { NurseTasksSection } from "@/components/tasks";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
 import { listReports, needsNurseAction, patientById, PHYSICIANS, STATUSES, userById, type Report, type Status } from "@/lib/store";

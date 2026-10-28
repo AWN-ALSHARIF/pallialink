@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { HeartPulse, Languages, LogOut, RotateCcw, ShieldAlert } from "lucide-react";
-import type { ReactNode } from "react";
-import { useApp, useName } from "@/lib/app";
-import { resetDemo, type Status } from "@/lib/store";
+import { Bell, HeartPulse, Languages, LogOut, RotateCcw, ShieldAlert } from "lucide-react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useApp, useFmtDate, useName } from "@/lib/app";
+import { isClinical, patientById, resetDemo, type Status } from "@/lib/store";
+import { listNotifications, markNotificationsRead, type AppNotification } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
 
 export function Logo() {
