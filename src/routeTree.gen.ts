@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CareRouteImport } from './routes/care'
 import { Route as ClinicRouteImport } from './routes/clinic'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PatientRouteImport } from './routes/patient'
@@ -21,6 +22,11 @@ import { Route as ReportsIdRouteImport } from './routes/reports.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareRoute = CareRouteImport.update({
+  id: '/care',
+  path: '/care',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClinicRoute = ClinicRouteImport.update({
@@ -61,6 +67,7 @@ const ReportsIdRoute = ReportsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/care': typeof CareRoute
   '/clinic': typeof ClinicRoute
   '/login': typeof LoginRoute
   '/patient': typeof PatientRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/care': typeof CareRoute
   '/clinic': typeof ClinicRoute
   '/login': typeof LoginRoute
   '/patient': typeof PatientRoute
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/care': typeof CareRoute
   '/clinic': typeof ClinicRoute
   '/login': typeof LoginRoute
   '/patient': typeof PatientRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/care'
     | '/clinic'
     | '/login'
     | '/patient'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/care'
     | '/clinic'
     | '/login'
     | '/patient'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/care'
     | '/clinic'
     | '/login'
     | '/patient'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CareRoute: typeof CareRoute
   ClinicRoute: typeof ClinicRoute
   LoginRoute: typeof LoginRoute
   PatientRoute: typeof PatientRoute
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/care': {
+      id: '/care'
+      path: '/care'
+      fullPath: '/care'
+      preLoaderRoute: typeof CareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clinic': {
@@ -197,6 +217,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CareRoute: CareRoute,
   ClinicRoute: ClinicRoute,
   LoginRoute: LoginRoute,
   PatientRoute: PatientRoute,

@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, FileText, Lock, Pencil, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarPlus, ClipboardList, FileText, Lock, Pencil, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
+import { NewFollowUpForm, NewTaskForm } from "@/components/tasks";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { addEntry, loadRecord, openDocument, updateProfile, uploadDocument, WRITABLE, type Entry, type EntryKind, type Profile } from "@/lib/emr";
 import { useGuard } from "@/lib/guard";
 import { listReports, userById, type User } from "@/lib/store";
+import { canCreateTask, listFollowUps, listTasks, type FollowUp, type NursingTask } from "@/lib/tasks";
 
 export const Route = createFileRoute("/records/$patientId")({
   head: () => ({
@@ -38,6 +40,8 @@ function RecordPage() {
   const { t, lang } = useApp();
   const [rec, setRec] = useState<Rec | null | undefined>(undefined);
   const [tab, setTab] = useState<Tab>("history");
+  const [showTask, setShowTask] = useState(false);
+  const [showFollowUp, setShowFollowUp] = useState(false);
   const reload = useCallback(() => loadRecord(patientId).then(setRec, () => setRec(null)), [patientId]);
   useEffect(() => { if (user) void reload(); }, [user, reload]);
   if (!user) return null;
@@ -45,11 +49,28 @@ function RecordPage() {
   const back = <Link to="/records" className="inline-flex items-center gap-2 text-sm font-semibold text-primary"><Back className="size-4" /> {t.medicalRecord}</Link>;
   if (rec === undefined) return <AppShell>{back}<p className="mt-6 text-muted-foreground">…</p></AppShell>;
   if (rec === null) return <AppShell>{back}<p className="card mt-6 flex items-center justify-center gap-2 p-8 text-muted-foreground"><Lock className="size-4" />{t.noAccessRecord}</p></AppShell>;
+  const mayCoordinate = canCreateTask(user, patientId);
 
   return (
     <AppShell>
       {back}
       <Summary rec={rec} />
+      {mayCoordinate && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button className="btn btn-primary min-h-10" onClick={() => { setShowTask(!showTask); setShowFollowUp(false); }}>
+            <ClipboardList className="size-4" /> {t.newTask}
+          </button>
+          <button className="btn btn-outline min-h-10" onClick={() => { setShowFollowUp(!showFollowUp); setShowTask(false); }}>
+            <CalendarPlus className="size-4" /> {t.newFollowUp}
+          </button>
+        </div>
+      )}
+      {mayCoordinate && (showTask || showFollowUp) && (
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          {showTask && <NewTaskForm patientId={patientId} onDone={() => { setShowTask(false); void reload(); }} />}
+          {showFollowUp && <NewFollowUpForm patientId={patientId} onDone={() => { setShowFollowUp(false); void reload(); }} />}
+        </div>
+      )}
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1" role="tablist">
         {TABS.map((k) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`btn min-h-10 shrink-0 ${tab === k ? "btn-navy" : "btn-outline"}`}>{t.tabs[k]}</button>
@@ -336,6 +357,12 @@ function TimelineTab({ rec, user }: { rec: Rec; user: User }) {
   const fmt = useFmtDate();
   const v = useStoreVersion();
   const [q, setQ] = useState("");
+  const [tasks, setTasks] = useState<NursingTask[]>([]);
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  useEffect(() => {
+    listTasks().then((all) => setTasks(all.filter((x) => x.patientId === rec.patient.id)), () => {});
+    listFollowUps().then((all) => setFollowUps(all.filter((x) => x.patientId === rec.patient.id)), () => {});
+  }, [rec.patient.id]);
   const items = useMemo(() => {
     const out: { at: string; kind: string; text: string; by: string; link?: string }[] = rec.entries.map((e) => ({
       at: e.recorded_at, kind: e.kind === "encounter" && e.title === "profile_update" ? t.editProfile : t.kinds[e.kind],
@@ -346,10 +373,22 @@ function TimelineTab({ rec, user }: { rec: Rec; user: User }) {
         out.push({ at: a.at, kind: `${t.kinds.report} ${r.id}`, text: [t.act[a.type], a.status ? t.status[a.status] : "", a.assigneeId ? name(userById(a.assigneeId)) : "", a.note, a.plan].filter(Boolean).join(" · "), by: a.byUserId, link: r.id });
       }
     }
+    for (const x of tasks) {
+      out.push({ at: x.createdAt, kind: `${t.nursingTasks} ${x.id}`, text: `${t.taskCat[x.category]} — ${x.instructions}`, by: x.physicianId });
+      if (x.ackAt) out.push({ at: x.ackAt, kind: `${t.nursingTasks} ${x.id}`, text: t.taskStatus.acknowledged, by: x.nurseId });
+      if (x.findings) out.push({ at: x.completedAt ?? x.createdAt, kind: `${t.nursingTasks} ${x.id}`, text: `${t.taskStatus.completed_pending_review}: ${x.findings}`, by: x.nurseId });
+      if (x.unableReason) out.push({ at: x.completedAt ?? x.createdAt, kind: `${t.nursingTasks} ${x.id}`, text: `${t.taskStatus.unable}: ${x.unableReason}`, by: x.nurseId });
+      if (x.reviewedAt) out.push({ at: x.reviewedAt, kind: `${t.nursingTasks} ${x.id}`, text: `${t.taskStatus.reviewed}${x.reviewNote ? `: ${x.reviewNote}` : ""}`, by: x.physicianId });
+    }
+    for (const f of followUps) {
+      out.push({ at: f.createdAt, kind: t.followUps, text: `${f.purpose} — ${t.followUpDate}: ${f.targetDate} · ${t.followUpResponsible}: ${name(userById(f.responsibleId))}`, by: f.createdBy });
+      if (f.completedAt) out.push({ at: f.completedAt, kind: t.followUps, text: `${t.followUpStatus[f.status]}${f.completionNotes ? `: ${f.completionNotes}` : ""}`, by: f.responsibleId });
+    }
     return out.sort((a, b) => b.at.localeCompare(a.at));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rec, user, v, t]);
+  }, [rec, user, v, t, tasks, followUps]);
   const shown = items.filter((i) => `${i.kind} ${i.text} ${name(userById(i.by))}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const sourceOf = (by: string) => { const r = userById(by)?.role; return r ? t.source[r] : null; };
   return (
     <section className="card p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -360,7 +399,11 @@ function TimelineTab({ rec, user }: { rec: Rec; user: User }) {
         {shown.map((i, n) => (
           <li key={n} className="relative">
             <span className="absolute -start-[27px] top-1.5 size-3 rounded-full bg-primary ring-4 ring-background" />
-            <p className="text-sm"><span className="me-2 rounded bg-muted px-1.5 text-xs">{i.kind}</span><strong>{name(userById(i.by))}</strong> {i.text}</p>
+            <p className="text-sm">
+              <span className="me-2 rounded bg-muted px-1.5 text-xs">{i.kind}</span>
+              {sourceOf(i.by) && <span className="me-2 rounded bg-accent px-1.5 text-xs">{sourceOf(i.by)}</span>}
+              <strong>{name(userById(i.by))}</strong> {i.text}
+            </p>
             {i.link && <Link to="/reports/$id" params={{ id: i.link }} className="text-xs text-primary"><FileText className="me-1 inline size-3" />{i.link}</Link>}
             <p className="text-xs text-muted-foreground">{fmt(i.at)}</p>
           </li>

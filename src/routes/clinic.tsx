@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, HeartHandshake, Search, Stethoscope, UserCog } from "lucide-react";
+import { ClipboardList, FileText, HeartHandshake, Search, Stethoscope, UserCog } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
+import { NurseTasksSection } from "@/components/tasks";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
 import { listReports, needsNurseAction, patientById, PHYSICIANS, STATUSES, userById, type Report, type Status } from "@/lib/store";
@@ -70,7 +71,8 @@ function Clinic() {
           {user.role === "physician" ? <Stethoscope className="size-5" /> : user.role === "nurse" ? <HeartHandshake className="size-5" /> : <UserCog className="size-5" />}
         </span>
         <h1 className="text-3xl font-bold text-navy">{user.role === "nurse" ? t.nurseDashboard : user.role === "physician" ? t.physicianDashboard : t.adminDashboard}</h1>
-        {user.role !== "admin" && <Link to="/records" className="btn btn-outline ms-auto min-h-10"><FileText className="size-4" /> {t.medicalRecord}</Link>}
+        {user.role === "physician" && <Link to="/care" className="btn btn-navy ms-auto min-h-10"><ClipboardList className="size-4" /> {t.careHub}</Link>}
+        {user.role !== "admin" && <Link to="/records" className={`btn btn-outline min-h-10 ${user.role === "physician" ? "" : "ms-auto"}`}><FileText className="size-4" /> {t.medicalRecord}</Link>}
         {user.canApproveClosure && <span className="rounded-full bg-success/15 px-3 py-1 text-xs font-semibold">{t.closureAuthorized}</span>}
       </div>
       {scopes.length > 1 && (
@@ -145,6 +147,7 @@ function Clinic() {
           </div>
         </div>
       </div>
+      {user.role === "nurse" && <NurseTasksSection user={user} />}
     </AppShell>
   );
 }
