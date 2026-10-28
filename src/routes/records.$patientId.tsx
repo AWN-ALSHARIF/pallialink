@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, FileText, Lock, Pencil, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarPlus, ClipboardList, FileText, Lock, Pencil, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
+import { NewFollowUpForm, NewTaskForm, TaskStatusBadge } from "@/components/tasks";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { addEntry, loadRecord, openDocument, updateProfile, uploadDocument, WRITABLE, type Entry, type EntryKind, type Profile } from "@/lib/emr";
 import { useGuard } from "@/lib/guard";
 import { listReports, userById, type User } from "@/lib/store";
+import { canCreateTask, listFollowUps, listTasks, type FollowUp, type NursingTask } from "@/lib/tasks";
 
 export const Route = createFileRoute("/records/$patientId")({
   head: () => ({
