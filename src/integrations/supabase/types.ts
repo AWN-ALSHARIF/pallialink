@@ -229,6 +229,11 @@ export type Database = {
           patient_id: string
           physician_ack_at: string | null
           physician_ack_by: string | null
+          return_ack_at: string | null
+          return_ack_by: string | null
+          return_reason: string | null
+          returned_at: string | null
+          returned_by: string | null
           status: string
           submitted_by: string
           symptoms: string[]
@@ -244,6 +249,11 @@ export type Database = {
           patient_id: string
           physician_ack_at?: string | null
           physician_ack_by?: string | null
+          return_ack_at?: string | null
+          return_ack_by?: string | null
+          return_reason?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
           status?: string
           submitted_by: string
           symptoms?: string[]
@@ -259,6 +269,11 @@ export type Database = {
           patient_id?: string
           physician_ack_at?: string | null
           physician_ack_by?: string | null
+          return_ack_at?: string | null
+          return_ack_by?: string | null
+          return_reason?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
           status?: string
           submitted_by?: string
           symptoms?: string[]
@@ -288,6 +303,20 @@ export type Database = {
           {
             foreignKeyName: "reports_physician_ack_by_fkey"
             columns: ["physician_ack_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+          {
+            foreignKeyName: "reports_return_ack_by_fkey"
+            columns: ["return_ack_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+          {
+            foreignKeyName: "reports_returned_by_fkey"
+            columns: ["returned_by"]
             isOneToOne: false
             referencedRelation: "app_users"
             referencedColumns: ["persona_id"]
@@ -341,6 +370,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      list_assignable_nurses: {
+        Args: { p_report: string }
+        Returns: {
+          name_ar: string
+          name_en: string
+          persona_id: string
+        }[]
       }
       list_assignable_physicians: {
         Args: { p_report: string }
