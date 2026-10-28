@@ -181,6 +181,239 @@ export type Database = {
           },
         ]
       }
+      follow_ups: {
+        Row: {
+          completed_at: string | null
+          completion_notes: string | null
+          created_at: string
+          created_by: string
+          id: number
+          patient_id: string
+          purpose: string
+          responsible_id: string
+          status: string
+          target_date: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by: string
+          id?: never
+          patient_id: string
+          purpose: string
+          responsible_id: string
+          status?: string
+          target_date: string
+        }
+        Update: {
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string
+          id?: never
+          patient_id?: string
+          purpose?: string
+          responsible_id?: string
+          status?: string
+          target_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_ups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+          {
+            foreignKeyName: "follow_ups_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_responsible_id_fkey"
+            columns: ["responsible_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          patient_id: string | null
+          read_at: string | null
+          ref_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          kind: string
+          patient_id?: string | null
+          read_at?: string | null
+          ref_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          kind?: string
+          patient_id?: string | null
+          read_at?: string | null
+          ref_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+        ]
+      }
+      nursing_task_activity: {
+        Row: {
+          at: string
+          by_user_id: string
+          id: number
+          note: string | null
+          status: string | null
+          task_id: string
+          type: string
+        }
+        Insert: {
+          at?: string
+          by_user_id: string
+          id?: never
+          note?: string | null
+          status?: string | null
+          task_id: string
+          type: string
+        }
+        Update: {
+          at?: string
+          by_user_id?: string
+          id?: never
+          note?: string | null
+          status?: string | null
+          task_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nursing_task_activity_by_user_id_fkey"
+            columns: ["by_user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+          {
+            foreignKeyName: "nursing_task_activity_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "nursing_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nursing_tasks: {
+        Row: {
+          ack_at: string | null
+          category: string
+          completed_at: string | null
+          created_at: string
+          due_at: string | null
+          findings: string | null
+          id: string
+          instructions: string
+          nurse_id: string
+          patient_id: string
+          physician_id: string
+          priority: string
+          review_note: string | null
+          reviewed_at: string | null
+          started_at: string | null
+          status: string
+          unable_reason: string | null
+        }
+        Insert: {
+          ack_at?: string | null
+          category: string
+          completed_at?: string | null
+          created_at?: string
+          due_at?: string | null
+          findings?: string | null
+          id: string
+          instructions?: string
+          nurse_id: string
+          patient_id: string
+          physician_id: string
+          priority?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          started_at?: string | null
+          status?: string
+          unable_reason?: string | null
+        }
+        Update: {
+          ack_at?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          due_at?: string | null
+          findings?: string | null
+          id?: string
+          instructions?: string
+          nurse_id?: string
+          patient_id?: string
+          physician_id?: string
+          priority?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          started_at?: string | null
+          status?: string
+          unable_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nursing_tasks_nurse_id_fkey"
+            columns: ["nurse_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+          {
+            foreignKeyName: "nursing_tasks_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nursing_tasks_physician_id_fkey"
+            columns: ["physician_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           id: string
@@ -560,6 +793,26 @@ export type Database = {
       }
       can_view_patient: { Args: { p: string }; Returns: boolean }
       can_view_report: { Args: { p_report: string }; Returns: boolean }
+      create_followup: {
+        Args: {
+          p_patient: string
+          p_purpose: string
+          p_responsible: string
+          p_target_date: string
+        }
+        Returns: number
+      }
+      create_nursing_task: {
+        Args: {
+          p_category: string
+          p_due_at: string
+          p_instructions: string
+          p_nurse: string
+          p_patient: string
+          p_priority: string
+        }
+        Returns: string
+      }
       current_persona: {
         Args: never
         Returns: {
@@ -619,6 +872,37 @@ export type Database = {
           persona_id: string
         }[]
       }
+      list_care_team_nurses: {
+        Args: { p_patient: string }
+        Returns: {
+          name_ar: string
+          name_en: string
+          persona_id: string
+        }[]
+      }
+      list_notifications: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: number
+          kind: string
+          patient_id: string | null
+          read_at: string | null
+          ref_id: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      mark_notifications_read: { Args: { p_ids: number[] }; Returns: undefined }
+      nursing_task_action: {
+        Args: { p_action: string; p_id: string; p_note?: string }
+        Returns: undefined
+      }
       report_action: {
         Args: {
           p_action: string
@@ -641,6 +925,10 @@ export type Database = {
           p_symptoms: string[]
         }
         Returns: string
+      }
+      update_followup: {
+        Args: { p_id: number; p_notes?: string; p_status: string }
+        Returns: undefined
       }
     }
     Enums: {
