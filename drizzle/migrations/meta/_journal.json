@@ -29,6 +29,13 @@
       "when": 1793189594896,
       "tag": "0003_phase2a_return_to_nursing",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793189638774,
+      "tag": "0004_phase2b_medical_record",
+      "breakpoints": true
     }
   ]
 }
