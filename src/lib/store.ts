@@ -2,8 +2,8 @@
 // UI depends only on these functions.
 
 export type Role = "patient" | "caregiver" | "nurse" | "physician" | "admin";
-export type Status = "submitted" | "acknowledged" | "awaiting_physician" | "under_review" | "follow_up" | "closed";
-export const STATUSES: Status[] = ["submitted", "acknowledged", "awaiting_physician", "under_review", "follow_up", "closed"];
+export type Status = "submitted" | "acknowledged" | "awaiting_physician" | "under_review" | "follow_up" | "returned_to_nursing" | "nursing_follow_up" | "closed";
+export const STATUSES: Status[] = ["submitted", "acknowledged", "awaiting_physician", "under_review", "follow_up", "returned_to_nursing", "nursing_follow_up", "closed"];
 export const SYMPTOMS = ["nausea", "fatigue", "breathlessness", "sleep", "other"] as const;
 export type Symptom = (typeof SYMPTOMS)[number];
 
@@ -27,7 +27,7 @@ export interface Patient {
 export interface Activity {
   at: string;
   byUserId: string;
-  type: "created" | "status" | "assigned" | "note" | "nursing_obs" | "assessment" | "escalated" | "returned" | "closure_approved";
+  type: "created" | "status" | "assigned" | "note" | "nursing_obs" | "assessment" | "escalated" | "returned" | "return_ack" | "closure_approved";
   status?: Status | undefined;
   assigneeId?: string | undefined;
   note?: string | undefined;
@@ -47,6 +47,11 @@ export interface Report {
   nurseAckAt?: string | undefined;
   physicianAckBy?: string | undefined;
   physicianAckAt?: string | undefined;
+  returnedBy?: string | undefined;
+  returnedAt?: string | undefined;
+  returnReason?: string | undefined;
+  returnAckBy?: string | undefined;
+  returnAckAt?: string | undefined;
   activity: Activity[];
 }
 interface DB { reports: Report[]; seq: number }
@@ -57,6 +62,7 @@ export const USERS: User[] = [
   { id: "u-nurse", role: "nurse", nameAr: "الممرضة نورة القحطاني", nameEn: "Nurse Noura Al-Qahtani" },
   { id: "u-doc", role: "physician", nameAr: "د. فهد الزهراني", nameEn: "Dr. Fahad Al-Zahrani", canApproveClosure: true },
   { id: "u-doc2", role: "physician", nameAr: "د. لمى الغامدي", nameEn: "Dr. Lama Al-Ghamdi" },
+  { id: "u-xnurse", role: "nurse", nameAr: "ممرضة اختبار (منظمة أخرى)", nameEn: "Test Nurse (other organization)" },
   { id: "u-admin", role: "admin", nameAr: "ريم الدوسري", nameEn: "Reem Al-Dosari" },
 ];
 
@@ -111,6 +117,7 @@ async function doRefresh() {
       id: r.id, patientId: r.patient_id, submittedBy: r.submitted_by, createdAt: r.created_at, pain: r.pain,
       symptoms: r.symptoms as Symptom[], notes: r.notes, status: r.status as Status, assigneeId: r.assignee_id ?? undefined,
       nurseAckBy: r.nurse_ack_by ?? undefined, nurseAckAt: r.nurse_ack_at ?? undefined, physicianAckBy: r.physician_ack_by ?? undefined, physicianAckAt: r.physician_ack_at ?? undefined,
+      returnedBy: r.returned_by ?? undefined, returnedAt: r.returned_at ?? undefined, returnReason: r.return_reason ?? undefined, returnAckBy: r.return_ack_by ?? undefined, returnAckAt: r.return_ack_at ?? undefined,
       activity: byReport.get(r.id) ?? [],
     })),
   };
@@ -165,18 +172,19 @@ export function canViewPatient(user: User, patientId: string): boolean {
 }
 export const isAssignedTo = (user: User, r: Report) => r.assigneeId === user.id;
 
-export type Action = "nurseAck" | "nursingObs" | "escalate" | "physAck" | "assessment" | "returnToNursing" | "approveClosure" | "adminAssign";
+export type Action = "nurseAck" | "returnAck" | "nursingObs" | "escalate" | "physAck" | "assessment" | "returnToNursing" | "approveClosure" | "adminAssign";
 /** Single source of truth for which role may do what on a report. */
 export function can(user: User, action: Action, r: Report): boolean {
   if (!canViewReport(user, r)) return false;
   const open = r.status !== "closed";
   switch (action) {
     case "nurseAck": return user.role === "nurse" && r.status === "submitted";
+    case "returnAck": return user.role === "nurse" && isAssignedTo(user, r) && r.status === "returned_to_nursing";
     case "nursingObs": return user.role === "nurse" && open;
-    case "escalate": return user.role === "nurse" && (r.status === "acknowledged" || r.status === "awaiting_physician");
+    case "escalate": return user.role === "nurse" && (r.status === "acknowledged" || r.status === "awaiting_physician" || r.status === "nursing_follow_up");
     case "physAck": return user.role === "physician" && isAssignedTo(user, r) && r.status === "awaiting_physician";
     case "assessment": return user.role === "physician" && isAssignedTo(user, r) && (r.status === "under_review" || r.status === "follow_up");
-    case "returnToNursing": return user.role === "physician" && isAssignedTo(user, r) && open;
+    case "returnToNursing": return user.role === "physician" && isAssignedTo(user, r) && (r.status === "under_review" || r.status === "follow_up");
     case "approveClosure": return user.role === "physician" && !!user.canApproveClosure && isAssignedTo(user, r) && r.status === "follow_up";
     case "adminAssign": return user.role === "admin" && open;
   }
@@ -190,7 +198,7 @@ export function listReports(user: User): Report[] {
 }
 /** Report-level visibility (mirrors the database rule): physicians see only reports assigned to / acknowledged by them. */
 export function canViewReport(user: User, r: Report): boolean {
-  if (user.role === "physician") return r.assigneeId === user.id || r.physicianAckBy === user.id;
+  if (user.role === "physician") return r.assigneeId === user.id || r.physicianAckBy === user.id || r.activity.some((a) => a.byUserId === user.id);
   return canViewPatient(user, r.patientId);
 }
 export function getReport(user: User, id: string): Report | undefined {
@@ -220,6 +228,17 @@ export async function submitReport(_user: User, input: { pain: number; symptoms:
   await refresh();
   return cache.reports.find((r) => r.id === data)!;
 }
+export const returnAcknowledge = (_u: User, id: string) => rpcAction(id, "returnAck");
+/** Eligible nurses for a return (assigned physician only): active, same org, on the care team. */
+export async function listAssignableNurses(reportId: string): Promise<{ id: string; nameAr: string; nameEn: string }[]> {
+  const supabase = await sb();
+  const { data, error } = await supabase.rpc("list_assignable_nurses", { p_report: reportId });
+  if (error) throw error;
+  return (data ?? []).map((d) => ({ id: d.persona_id, nameAr: d.name_ar, nameEn: d.name_en }));
+}
+/** Reports needing this nurse's action: new, returned to her, or her own nursing follow-ups. */
+export const needsNurseAction = (user: User, r: Report) =>
+  r.status === "submitted" || (r.assigneeId === user.id && (r.status === "returned_to_nursing" || r.status === "nursing_follow_up"));
 export const nurseAcknowledge = (_u: User, id: string) => rpcAction(id, "nurseAck");
 export const addNursingObservation = (_u: User, id: string, note: string) => rpcAction(id, "nursingObs", undefined, note);
 export const escalateToPhysician = (_u: User, id: string, physicianId: string, note = "") => rpcAction(id, "escalate", physicianId, note);

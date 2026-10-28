@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, FileText, Undo2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
@@ -44,7 +44,19 @@ function ReportDetail() {
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <h1 className="font-mono text-3xl font-bold text-navy" dir="ltr">{r.id}</h1>
         <StatusBadge status={r.status} />
+        <Link to="/records/$patientId" params={{ patientId: r.patientId }} className="btn btn-outline ms-auto min-h-10"><FileText className="size-4" /> {t.openRecord}</Link>
       </div>
+
+      {r.returnedBy && (r.status === "returned_to_nursing" || r.status === "nursing_follow_up") && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm" role="status">
+          <Undo2 className="size-5 shrink-0 text-destructive" />
+          <div>
+            <p className="font-bold">{t.returnedBanner}</p>
+            <p className="mt-1 text-muted-foreground">{t.returnedByLbl} <strong className="text-foreground">{name(userById(r.returnedBy))}</strong> {t.returnedToLbl} <strong className="text-foreground">{name(userById(r.assigneeId))}</strong> · {fmt(r.returnedAt!)}</p>
+            <p className="mt-2"><strong>{t.returnReason}:</strong> {r.returnReason}</p>
+          </div>
+        </div>
+      )}
 
       {r.pain >= 7 && (
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
@@ -65,6 +77,7 @@ function ReportDetail() {
               <Item label={t.otherSymptoms}>{r.symptoms.map((s) => t.symptoms[s]).join("، ") || "—"}</Item>
               <Item label={t.notes}>{r.notes || "—"}</Item>
               <Item label={t.nurseAckBy}>{r.nurseAckBy ? `${name(userById(r.nurseAckBy))} · ${fmt(r.nurseAckAt!)}` : t.ackPending}</Item>
+              {r.returnedBy && <Item label={t.returnAckBy}>{r.returnAckBy ? `${name(userById(r.returnAckBy))} · ${fmt(r.returnAckAt!)}` : t.ackPending}</Item>}
               <Item label={t.physAckBy}>{r.physicianAckBy ? `${name(userById(r.physicianAckBy))} · ${fmt(r.physicianAckAt!)}` : t.ackPending}</Item>
             </dl>
           </section>

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 
-const PERSONAS = ["u-pat", "u-cg", "u-nurse", "u-doc", "u-doc2", "u-admin"];
+const PERSONAS = ["u-pat", "u-cg", "u-nurse", "u-doc", "u-doc2", "u-admin", "u-xnurse"];
 
 /**
  * Demo sign-in: each persona is a real backend account so database rules apply.
