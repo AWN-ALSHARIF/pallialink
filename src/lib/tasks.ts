@@ -70,7 +70,7 @@ export async function createTask(
   const { data, error } = await supabase.rpc("create_nursing_task", {
     p_patient: patientId, p_nurse: nurseId, p_category: category,
     p_instructions: instructions, p_priority: priority,
-    ...(dueAt ? { p_due_at: dueAt } : {}),
+    p_due_at: (dueAt ?? null) as unknown as string, // null = no target time
   });
   if (error || !data) throw new Error("forbidden");
   return data;
