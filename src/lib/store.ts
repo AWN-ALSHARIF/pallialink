@@ -60,6 +60,8 @@ interface DB { reports: Report[]; seq: number }
 
 export const USERS: User[] = [
   { id: "u-pat", role: "patient", nameAr: "رنا عبدالعزيز", nameEn: "Rana Abdulaziz", patientId: "p1" },
+  { id: "u-pat2", role: "patient", nameAr: "عبدالله ناصر", nameEn: "Abdullah Nasser", patientId: "p2" },
+  { id: "u-pat3", role: "patient", nameAr: "سارة محمد", nameEn: "Sara Mohammed", patientId: "p3" },
   { id: "u-cg", role: "caregiver", nameAr: "طارق عبدالله", nameEn: "Tariq Abdullah", patientId: "p1" },
   { id: "u-nurse", role: "nurse", nameAr: "الياس فارس", nameEn: "Elias Fares" },
   { id: "u-doc", role: "physician", nameAr: "منوال خالد", nameEn: "Manwal Khaled", canApproveClosure: true },
@@ -70,8 +72,8 @@ export const USERS: User[] = [
 
 export const PATIENTS: Patient[] = [
   { id: "p1", nameAr: "رنا عبدالعزيز", nameEn: "Rana Abdulaziz", age: 64, conditionAr: "سرطان رئة متقدم", conditionEn: "Advanced lung cancer", careTeam: ["u-nurse", "u-doc"] },
-  { id: "p2", nameAr: "عبدالله ناصر", nameEn: "Abdullah Nasser", age: 78, conditionAr: "قصور قلب متقدم", conditionEn: "Advanced heart failure", careTeam: ["u-nurse", "u-doc"] },
-  { id: "p3", nameAr: "سارة محمد", nameEn: "Sara Mohammed", age: 71, conditionAr: "مرض عصبي متقدم", conditionEn: "Advanced neurological disease", careTeam: ["u-nurse", "u-doc2"] },
+  { id: "p2", nameAr: "عبدالله ناصر", nameEn: "Abdullah Nasser", age: 68, conditionAr: "قصور قلب متقدم", conditionEn: "Advanced heart failure", careTeam: ["u-nurse", "u-doc"] },
+  { id: "p3", nameAr: "سارة محمد", nameEn: "Sara Mohammed", age: 57, conditionAr: "مرض عصبي متقدم", conditionEn: "Advanced neurological disease", careTeam: ["u-nurse", "u-doc2"] },
 ];
 
 export const CLINICIANS = USERS.filter((u) => u.role === "nurse" || u.role === "physician");
