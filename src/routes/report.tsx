@@ -56,7 +56,7 @@ function ReportPage() {
   const toggle = (s: Symptom) => setSymptoms((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
   const submit = () => {
     if (pain === null) return;
-    try { setDone(submitReport(user, { pain, symptoms, notes })); } catch { toast.error("Error"); }
+    submitReport(user, { pain, symptoms, notes }).then(setDone, () => toast.error(t.readOnly));
   };
 
   return (
