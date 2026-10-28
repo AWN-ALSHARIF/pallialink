@@ -29,4 +29,25 @@ describe("role hints", () => {
     expect(can(u("u-nurse"), "nurseAck", r)).toBe(true);
     expect(can(u("u-admin"), "nurseAck", r)).toBe(false);
   });
+  it("physician cannot see another physician's report for a patient they also treat", () => {
+    __setReportsForTest([rep("A", "p1", "under_review", "u-doc"), rep("B", "p1", "under_review", "u-doc2")]);
+    expect(listReports(u("u-doc")).map((r) => r.id)).toEqual(["A"]);
+  });
+  it("nurse can escalate only after nursing acknowledgment", () => {
+    expect(can(u("u-nurse"), "escalate", rep("X", "p1", "submitted"))).toBe(false);
+    expect(can(u("u-nurse"), "escalate", rep("X", "p1", "acknowledged"))).toBe(true);
+  });
+  it("only the assigned physician acknowledges, and only while awaiting them", () => {
+    const r = rep("Y", "p3", "awaiting_physician", "u-doc2");
+    __setReportsForTest([r]);
+    expect(can(u("u-doc2"), "physAck", r)).toBe(true);
+    expect(can(u("u-doc"), "physAck", r)).toBe(false);
+    expect(can(u("u-doc2"), "physAck", { ...r, status: "acknowledged" })).toBe(false);
+  });
+  it("assessment requires physician acknowledgment first", () => {
+    const r = rep("Z", "p1", "awaiting_physician", "u-doc");
+    __setReportsForTest([r]);
+    expect(can(u("u-doc"), "assessment", r)).toBe(false);
+    expect(can(u("u-doc"), "assessment", { ...r, status: "under_review" })).toBe(true);
+  });
 });
