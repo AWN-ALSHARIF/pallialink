@@ -18,3 +18,4 @@
 - Eligible physicians come from the `list_assignable_physicians` RPC, never a hardcoded/care-team list.
 - Return to nursing uses its own states (`returned_to_nursing` → nurse `returnAck` → `nursing_follow_up`); never reuse `acknowledged`. Physician acks/assessments are never cleared by a return.
 - Medical record = `patient_profiles` + append-only `clinical_entries` (+ private `clinical-documents` bucket, path `<patient_id>/...`); UI goes through `src/lib/emr.ts`, writes only via `emr_add_entry`/`emr_update_profile`. Missing data renders as "not documented"; explicit negatives are stored as entries (e.g. allergy status `none_known`).
+- Report voice messages live in the private `report-audio` bucket (path `<patient_id>/<uuid>`), linked via `reports.audio_path`; read only through short-lived signed URLs gated by `can_view_report`, validated in `submit_report`. Why: recordings are PHI and must follow report-level access.

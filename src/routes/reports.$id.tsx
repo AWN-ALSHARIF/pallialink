@@ -5,6 +5,7 @@ import { AppShell, PainPill, StatusBadge } from "@/components/shell";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
 import { getReport, listReports, patientById, userById } from "@/lib/store";
+import { VoicePlayer } from "@/components/voice";
 import { ClinicalNotes, RoleActions } from "@/components/report-actions";
 
 export const Route = createFileRoute("/reports/$id")({
@@ -67,6 +68,7 @@ function ReportDetail() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          {r.audioPath && <VoicePlayer path={r.audioPath} durationS={r.audioDurationS} />}
           <section className="card p-6">
             <h2 className="font-bold text-navy">{t.reportDetail}</h2>
             <dl className="mt-4 grid gap-4 sm:grid-cols-2">

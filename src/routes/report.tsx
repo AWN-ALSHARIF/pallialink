@@ -7,6 +7,7 @@ import { useApp } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
 import { submitReport, SYMPTOMS, type Report, type Symptom } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { VoiceRecorder, type Recording } from "@/components/voice";
 
 export const Route = createFileRoute("/report")({
   head: () => ({
@@ -35,6 +36,8 @@ function ReportPage() {
   const [pain, setPain] = useState<number | null>(null);
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [notes, setNotes] = useState("");
+  const [audio, setAudio] = useState<Recording | null>(null);
+  const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Report | null>(null);
   if (!user) return null;
 
@@ -56,7 +59,10 @@ function ReportPage() {
   const toggle = (s: Symptom) => setSymptoms((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
   const submit = () => {
     if (pain === null) return;
-    submitReport(user, { pain, symptoms, notes }).then(setDone, () => toast.error(t.readOnly));
+    setBusy(true);
+    submitReport(user, { pain, symptoms, notes, audio: audio ?? undefined })
+      .then(setDone, (e: Error) => toast.error(e.message === "upload" ? t.voice.uploadErr : t.readOnly))
+      .finally(() => setBusy(false));
   };
 
   return (
@@ -95,7 +101,8 @@ function ReportPage() {
           <label htmlFor="notes" className="text-lg font-bold">{t.notes}</label>
           <textarea id="notes" rows={4} maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPh} className="field mt-3" />
         </section>
-        <button disabled={pain === null} onClick={submit} className="btn btn-primary min-h-14 w-full text-lg">{t.submit}</button>
+        <section className="card p-6"><VoiceRecorder value={audio} onChange={setAudio} /></section>
+        <button disabled={pain === null || busy} onClick={submit} className="btn btn-primary min-h-14 w-full text-lg">{t.submit}</button>
         <Disclaimer />
       </div>
     </AppShell>
