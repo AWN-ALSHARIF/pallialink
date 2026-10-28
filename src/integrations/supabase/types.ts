@@ -420,6 +420,9 @@ export type Database = {
       reports: {
         Row: {
           assignee_id: string | null
+          audio_duration_s: number | null
+          audio_mime: string | null
+          audio_path: string | null
           created_at: string
           id: string
           notes: string
@@ -440,6 +443,9 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          audio_duration_s?: number | null
+          audio_mime?: string | null
+          audio_path?: string | null
           created_at?: string
           id: string
           notes?: string
@@ -460,6 +466,9 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          audio_duration_s?: number | null
+          audio_mime?: string | null
+          audio_path?: string | null
           created_at?: string
           id?: string
           notes?: string
@@ -623,7 +632,14 @@ export type Database = {
       reset_demo: { Args: never; Returns: undefined }
       seed_demo: { Args: never; Returns: undefined }
       submit_report: {
-        Args: { p_notes: string; p_pain: number; p_symptoms: string[] }
+        Args: {
+          p_audio_duration?: number
+          p_audio_mime?: string
+          p_audio_path?: string
+          p_notes: string
+          p_pain: number
+          p_symptoms: string[]
+        }
         Returns: string
       }
     }

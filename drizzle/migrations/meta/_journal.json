@@ -36,6 +36,13 @@
       "when": 1793189638774,
       "tag": "0004_phase2b_medical_record",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793191213768,
+      "tag": "0005_report_voice_recording",
+      "breakpoints": true
     }
   ]
 }
