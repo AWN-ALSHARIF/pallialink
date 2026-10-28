@@ -81,6 +81,8 @@ const statusStyle: Record<Status, string> = {
   awaiting_physician: "bg-warning/10 text-foreground border-navy/30",
   under_review: "bg-navy/10 text-navy border-navy/20",
   follow_up: "bg-primary/15 text-accent-foreground border-primary/40",
+  returned_to_nursing: "bg-destructive/10 text-foreground border-destructive/30",
+  nursing_follow_up: "bg-accent text-accent-foreground border-warning/40",
   closed: "bg-success/15 text-foreground border-success/40",
 };
 export function StatusBadge({ status }: { status: Status }) {
