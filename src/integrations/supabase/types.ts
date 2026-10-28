@@ -14,35 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      _mig_p1_function_backup: {
+        Row: {
+          definition: string
+          fn_name: string
+          saved_at: string
+        }
+        Insert: {
+          definition: string
+          fn_name: string
+          saved_at?: string
+        }
+        Update: {
+          definition?: string
+          fn_name?: string
+          saved_at?: string
+        }
+        Relationships: []
+      }
+      _mig_p1_report_backup: {
+        Row: {
+          old_assignee_id: string | null
+          old_status: string
+          report_id: string
+          saved_at: string
+        }
+        Insert: {
+          old_assignee_id?: string | null
+          old_status: string
+          report_id: string
+          saved_at?: string
+        }
+        Update: {
+          old_assignee_id?: string | null
+          old_status?: string
+          report_id?: string
+          saved_at?: string
+        }
+        Relationships: []
+      }
       app_users: {
         Row: {
+          active: boolean
           auth_id: string | null
           can_approve_closure: boolean
           name_ar: string
           name_en: string
+          org_id: string
           patient_id: string | null
           persona_id: string
           role: string
         }
         Insert: {
+          active?: boolean
           auth_id?: string | null
           can_approve_closure?: boolean
           name_ar: string
           name_en: string
+          org_id?: string
           patient_id?: string | null
           persona_id: string
           role: string
         }
         Update: {
+          active?: boolean
           auth_id?: string | null
           can_approve_closure?: boolean
           name_ar?: string
           name_en?: string
+          org_id?: string
           patient_id?: string | null
           persona_id?: string
           role?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "app_users_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "app_users_patient_id_fkey"
             columns: ["patient_id"]
@@ -51,6 +103,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizations: {
+        Row: {
+          id: string
+          is_demo: boolean
+          name_ar: string
+          name_en: string
+        }
+        Insert: {
+          id: string
+          is_demo?: boolean
+          name_ar: string
+          name_en: string
+        }
+        Update: {
+          id?: string
+          is_demo?: boolean
+          name_ar?: string
+          name_en?: string
+        }
+        Relationships: []
       }
       patients: {
         Row: {
@@ -61,6 +134,7 @@ export type Database = {
           id: string
           name_ar: string
           name_en: string
+          org_id: string
         }
         Insert: {
           age: number
@@ -70,6 +144,7 @@ export type Database = {
           id: string
           name_ar: string
           name_en: string
+          org_id?: string
         }
         Update: {
           age?: number
@@ -79,8 +154,17 @@ export type Database = {
           id?: string
           name_ar?: string
           name_en?: string
+          org_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "patients_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_activity: {
         Row: {
@@ -139,8 +223,12 @@ export type Database = {
           created_at: string
           id: string
           notes: string
+          nurse_ack_at: string | null
+          nurse_ack_by: string | null
           pain: number
           patient_id: string
+          physician_ack_at: string | null
+          physician_ack_by: string | null
           status: string
           submitted_by: string
           symptoms: string[]
@@ -150,8 +238,12 @@ export type Database = {
           created_at?: string
           id: string
           notes?: string
+          nurse_ack_at?: string | null
+          nurse_ack_by?: string | null
           pain: number
           patient_id: string
+          physician_ack_at?: string | null
+          physician_ack_by?: string | null
           status?: string
           submitted_by: string
           symptoms?: string[]
@@ -161,8 +253,12 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string
+          nurse_ack_at?: string | null
+          nurse_ack_by?: string | null
           pain?: number
           patient_id?: string
+          physician_ack_at?: string | null
+          physician_ack_by?: string | null
           status?: string
           submitted_by?: string
           symptoms?: string[]
@@ -176,11 +272,25 @@ export type Database = {
             referencedColumns: ["persona_id"]
           },
           {
+            foreignKeyName: "reports_nurse_ack_by_fkey"
+            columns: ["nurse_ack_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+          {
             foreignKeyName: "reports_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_physician_ack_by_fkey"
+            columns: ["physician_ack_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
           },
           {
             foreignKeyName: "reports_submitted_by_fkey"
@@ -211,13 +321,16 @@ export type Database = {
         Returns: undefined
       }
       can_view_patient: { Args: { p: string }; Returns: boolean }
+      can_view_report: { Args: { p_report: string }; Returns: boolean }
       current_persona: {
         Args: never
         Returns: {
+          active: boolean
           auth_id: string | null
           can_approve_closure: boolean
           name_ar: string
           name_en: string
+          org_id: string
           patient_id: string | null
           persona_id: string
           role: string
@@ -228,6 +341,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      list_assignable_physicians: {
+        Args: { p_report: string }
+        Returns: {
+          name_ar: string
+          name_en: string
+          persona_id: string
+        }[]
       }
       report_action: {
         Args: {
