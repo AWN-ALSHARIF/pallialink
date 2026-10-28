@@ -69,9 +69,9 @@ export const USERS: User[] = [
 ];
 
 export const PATIENTS: Patient[] = [
-  { id: "p1", nameAr: "رنا عبدالعزيز", nameEn: "Rana Abdulaziz", age: 64, conditionAr: "رعاية تلطيفية منزلية", conditionEn: "Home palliative care", careTeam: ["u-nurse", "u-doc"] },
-  { id: "p2", nameAr: "عبدالله الحربي", nameEn: "Abdullah Al-Harbi", age: 78, conditionAr: "رعاية تلطيفية منزلية", conditionEn: "Home palliative care", careTeam: ["u-nurse", "u-doc"] },
-  { id: "p3", nameAr: "منيرة الشهري", nameEn: "Munira Al-Shehri", age: 71, conditionAr: "رعاية تلطيفية منزلية", conditionEn: "Home palliative care", careTeam: ["u-nurse", "u-doc2"] },
+  { id: "p1", nameAr: "رنا عبدالعزيز", nameEn: "Rana Abdulaziz", age: 64, conditionAr: "سرطان رئة متقدم", conditionEn: "Advanced lung cancer", careTeam: ["u-nurse", "u-doc"] },
+  { id: "p2", nameAr: "عبدالله ناصر", nameEn: "Abdullah Nasser", age: 78, conditionAr: "قصور قلب متقدم", conditionEn: "Advanced heart failure", careTeam: ["u-nurse", "u-doc"] },
+  { id: "p3", nameAr: "سارة محمد", nameEn: "Sara Mohammed", age: 71, conditionAr: "مرض عصبي متقدم", conditionEn: "Advanced neurological disease", careTeam: ["u-nurse", "u-doc2"] },
 ];
 
 export const CLINICIANS = USERS.filter((u) => u.role === "nurse" || u.role === "physician");
