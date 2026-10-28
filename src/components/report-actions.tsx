@@ -22,8 +22,8 @@ function Hint({ children }: { children: ReactNode }) {
 
 function useRun() {
   const { t } = useApp();
-  return (fn: () => void, after?: () => void) => {
-    try { fn(); after?.(); toast.success("✓"); } catch { toast.error(t.readOnly); }
+  return (fn: () => Promise<unknown>, after?: () => void) => {
+    fn().then(() => { after?.(); toast.success("✓"); }, () => toast.error(t.readOnly));
   };
 }
 

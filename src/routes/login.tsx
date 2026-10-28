@@ -39,7 +39,7 @@ function Login() {
             return (
               <button
                 key={u.id}
-                onClick={() => { setUserId(u.id); navigate({ to: isClinical(u.role) ? "/clinic" : "/patient" }); }}
+                onClick={async () => { await setUserId(u.id); navigate({ to: isClinical(u.role) ? "/clinic" : "/patient" }); }}
                 className="card group p-6 text-start transition hover:-translate-y-0.5 hover:border-primary"
               >
                 <span className="grid size-12 place-items-center rounded-xl bg-accent text-primary group-hover:bg-primary group-hover:text-primary-foreground"><Icon className="size-6" /></span>

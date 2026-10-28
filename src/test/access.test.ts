@@ -1,69 +1,32 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  addAssessment, addNursingObservation, approveClosure, escalateToPhysician, getReport, listReports,
-  nurseAcknowledge, physicianAcknowledge, resetDemo, returnToNursing, submitReport, USERS,
-} from "@/lib/store";
+import { __setReportsForTest, can, getReport, listReports, USERS, type Report } from "@/lib/store";
 
+// UI-side permission hints. The same rules are enforced again by the database functions.
 const u = (id: string) => USERS.find((x) => x.id === id)!;
-
-describe("demo access control", () => {
-  beforeEach(() => resetDemo());
-
-  it("patient only sees their own reports", () => {
-    expect(listReports(u("u-pat")).every((r) => r.patientId === "p1")).toBe(true);
-  });
-  it("caregiver cannot open another patient's report", () => {
-    expect(getReport(u("u-cg"), "PL-01001")).toBeUndefined();
-  });
-  it("submitted report gets a new unique ID and status Submitted", () => {
-    const r = submitReport(u("u-pat"), { pain: 5, symptoms: [], notes: "" });
-    expect(r.id).toBe("PL-01008");
-    expect(r.status).toBe("submitted");
-  });
+const rep = (id: string, patientId: string, status: Report["status"], assigneeId?: string): Report => ({
+  id, patientId, submittedBy: "u-pat", createdAt: new Date().toISOString(), pain: 5, symptoms: [], notes: "", status, assigneeId, activity: [],
 });
 
-describe("nurse vs physician workflows", () => {
-  beforeEach(() => resetDemo());
-
-  it("nurse cannot document an assessment or approve closure", () => {
-    expect(() => addAssessment(u("u-nurse"), "PL-01004", "x", "y")).toThrow();
-    expect(() => approveClosure(u("u-nurse"), "PL-01002")).toThrow();
+describe("role hints", () => {
+  beforeEach(() => __setReportsForTest([
+    rep("PL-1", "p1", "follow_up", "u-doc"),
+    rep("PL-2", "p3", "under_review", "u-doc2"),
+    rep("PL-3", "p2", "submitted"),
+  ]));
+  it("patient only sees their own reports", () => {
+    expect(listReports(u("u-pat")).map((r) => r.id)).toEqual(["PL-1"]);
   });
   it("physician cannot see patients with no report assigned to them", () => {
-    expect(listReports(u("u-doc")).some((r) => r.patientId === "p3")).toBe(false);
-    expect(getReport(u("u-doc"), "PL-01003")).toBeUndefined();
+    expect(getReport(u("u-doc"), "PL-2")).toBeUndefined();
   });
-  it("nurse escalation makes the report visible to that physician", () => {
-    const r = submitReport(u("u-pat"), { pain: 6, symptoms: [], notes: "" });
-    expect(getReport(u("u-doc2"), r.id)).toBeUndefined();
-    nurseAcknowledge(u("u-nurse"), r.id);
-    // p1's care team has u-doc; escalate there
-    escalateToPhysician(u("u-nurse"), r.id, "u-doc");
-    expect(getReport(u("u-doc"), r.id)?.assigneeId).toBe("u-doc");
+  it("nurse cannot approve closure; authorised assigned physician can", () => {
+    const r = getReport(u("u-doc"), "PL-1")!;
+    expect(can(u("u-nurse"), "approveClosure", r)).toBe(false);
+    expect(can(u("u-doc"), "approveClosure", r)).toBe(true);
   });
-  it("full flow ends closed with a timestamped audit entry per step", () => {
-    const r = submitReport(u("u-cg"), { pain: 4, symptoms: [], notes: "" });
-    nurseAcknowledge(u("u-nurse"), r.id);
-    addNursingObservation(u("u-nurse"), r.id, "obs");
-    escalateToPhysician(u("u-nurse"), r.id, "u-doc");
-    physicianAcknowledge(u("u-doc"), r.id);
-    addAssessment(u("u-doc"), r.id, "a", "p");
-    approveClosure(u("u-doc"), r.id);
-    const final = getReport(u("u-doc"), r.id)!;
-    expect(final.status).toBe("closed");
-    expect(final.activity.map((a) => a.type)).toEqual(["created", "status", "nursing_obs", "escalated", "status", "assessment", "closure_approved"]);
-    expect(final.activity.every((a) => !Number.isNaN(Date.parse(a.at)))).toBe(true);
-  });
-  it("physician without closure authorization cannot close", () => {
-    // PL-01003 is assigned to u-doc2 (not authorized)
-    addAssessment(u("u-doc2"), "PL-01003", "a", "p");
-    expect(() => approveClosure(u("u-doc2"), "PL-01003")).toThrow();
-  });
-  it("physician cannot act on a report assigned to someone else", () => {
-    expect(() => addAssessment(u("u-doc"), "PL-01004", "a", "p")).toThrow();
-  });
-  it("returning to nursing reassigns to the nurse", () => {
-    returnToNursing(u("u-doc"), "PL-01002", "u-nurse", "please visit");
-    expect(getReport(u("u-nurse"), "PL-01002")?.assigneeId).toBe("u-nurse");
+  it("only nurse can acknowledge a submitted report", () => {
+    const r = getReport(u("u-admin"), "PL-3")!;
+    expect(can(u("u-nurse"), "nurseAck", r)).toBe(true);
+    expect(can(u("u-admin"), "nurseAck", r)).toBe(false);
   });
 });

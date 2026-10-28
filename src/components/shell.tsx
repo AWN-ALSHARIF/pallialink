@@ -56,14 +56,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             )}
             <LangButton />
-            <button className="btn btn-outline min-h-10 px-3" title={t.resetDemo} aria-label={t.resetDemo} onClick={resetDemo}>
+            <button className="btn btn-outline min-h-10 px-3" title={t.resetDemo} aria-label={t.resetDemo} onClick={() => { void resetDemo().catch(() => {}); }}>
               <RotateCcw className="size-4" />
             </button>
             <button
               className="btn btn-outline min-h-10 px-3"
               aria-label={t.signOut}
               title={t.signOut}
-              onClick={() => { setUserId(null); navigate({ to: "/login", replace: true }); }}
+              onClick={async () => { await setUserId(null); navigate({ to: "/login", replace: true }); }}
             >
               <LogOut className="size-4" />
             </button>
