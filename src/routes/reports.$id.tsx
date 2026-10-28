@@ -64,6 +64,8 @@ function ReportDetail() {
               <Item label={t.date}>{fmt(r.createdAt)}</Item>
               <Item label={t.otherSymptoms}>{r.symptoms.map((s) => t.symptoms[s]).join("، ") || "—"}</Item>
               <Item label={t.notes}>{r.notes || "—"}</Item>
+              <Item label={t.nurseAckBy}>{r.nurseAckBy ? `${name(userById(r.nurseAckBy))} · ${fmt(r.nurseAckAt!)}` : t.ackPending}</Item>
+              <Item label={t.physAckBy}>{r.physicianAckBy ? `${name(userById(r.physicianAckBy))} · ${fmt(r.physicianAckAt!)}` : t.ackPending}</Item>
             </dl>
           </section>
 
