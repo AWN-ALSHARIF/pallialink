@@ -57,7 +57,7 @@ function Clinic() {
   const stats = [
     { label: t.totalReports, value: scoped.length, tone: "text-navy" },
     { label: t.awaiting, value: count("submitted"), tone: "text-warning" },
-    { label: t.inProgress, value: count("acknowledged") + count("under_review") + count("follow_up"), tone: "text-primary" },
+    { label: t.inProgress, value: count("acknowledged") + count("awaiting_physician") + count("under_review") + count("follow_up"), tone: "text-primary" },
     { label: t.closedCount, value: count("closed"), tone: "text-success" },
   ];
   const chart = STATUSES.map((s) => ({ name: t.status[s], value: count(s) }));

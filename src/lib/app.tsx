@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { currentPersonaId, refresh, signInAs, signOut, subscribe, userById, type User } from "./store";
+import { currentPersonaId, refresh, refreshIfStale, signInAs, signOut, subscribe, userById, type User } from "./store";
 import { dict, type Lang } from "./i18n";
 
 interface Ctx {
@@ -30,7 +30,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setReady(true);
     })();
     // Pick up changes made in other tabs or by other roles when returning to the page.
-    const onFocus = () => { void refresh().catch(() => {}); };
+    const onFocus = () => { void refreshIfStale().catch(() => {}); };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
