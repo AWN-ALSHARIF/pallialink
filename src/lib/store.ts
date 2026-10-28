@@ -52,6 +52,8 @@ export interface Report {
   returnReason?: string | undefined;
   returnAckBy?: string | undefined;
   returnAckAt?: string | undefined;
+  audioPath?: string | undefined;
+  audioDurationS?: number | undefined;
   activity: Activity[];
 }
 interface DB { reports: Report[]; seq: number }
@@ -118,6 +120,7 @@ async function doRefresh() {
       symptoms: r.symptoms as Symptom[], notes: r.notes, status: r.status as Status, assigneeId: r.assignee_id ?? undefined,
       nurseAckBy: r.nurse_ack_by ?? undefined, nurseAckAt: r.nurse_ack_at ?? undefined, physicianAckBy: r.physician_ack_by ?? undefined, physicianAckAt: r.physician_ack_at ?? undefined,
       returnedBy: r.returned_by ?? undefined, returnedAt: r.returned_at ?? undefined, returnReason: r.return_reason ?? undefined, returnAckBy: r.return_ack_by ?? undefined, returnAckAt: r.return_ack_at ?? undefined,
+      audioPath: r.audio_path ?? undefined, audioDurationS: r.audio_duration_s ?? undefined,
       activity: byReport.get(r.id) ?? [],
     })),
   };
@@ -221,9 +224,20 @@ async function rpcAction(id: string, action: Action, target?: string, note?: str
 }
 
 // Every write is re-checked by the database (role, assignment, status). UI checks are only hints.
-export async function submitReport(_user: User, input: { pain: number; symptoms: Symptom[]; notes: string }): Promise<Report> {
+export const AUDIO_MAX_S = 60;
+export const AUDIO_MAX_BYTES = 2 * 1024 * 1024;
+export async function submitReport(user: User, input: { pain: number; symptoms: Symptom[]; notes: string; audio?: { blob: Blob; durationS: number } | undefined }): Promise<Report> {
   const supabase = await sb();
-  const { data, error } = await supabase.rpc("submit_report", { p_pain: input.pain, p_symptoms: input.symptoms, p_notes: input.notes });
+  let audio: { p_audio_path: string; p_audio_duration: number; p_audio_mime: string } | {} = {};
+  if (input.audio && user.patientId) {
+    const mime = input.audio.blob.type.split(";")[0] || "audio/webm";
+    const ext = mime === "audio/mp4" ? "m4a" : mime === "audio/ogg" ? "ogg" : mime === "audio/mpeg" ? "mp3" : "webm";
+    const path = `${user.patientId}/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("report-audio").upload(path, input.audio.blob, { contentType: mime });
+    if (upErr) throw new Error("upload");
+    audio = { p_audio_path: path, p_audio_duration: Math.max(1, Math.min(AUDIO_MAX_S, Math.round(input.audio.durationS))), p_audio_mime: mime };
+  }
+  const { data, error } = await supabase.rpc("submit_report", { p_pain: input.pain, p_symptoms: input.symptoms, p_notes: input.notes, ...audio });
   if (error || !data) throw new Error("forbidden");
   await refresh();
   return cache.reports.find((r) => r.id === data)!;
@@ -250,3 +264,11 @@ export const adminAssign = (_u: User, id: string, assigneeId: string) => rpcActi
 
 export const userById = (id?: string) => USERS.find((u) => u.id === id);
 export const patientById = (id: string) => PATIENTS.find((p) => p.id === id);
+
+/** Short-lived (5 min) signed URL; storage policy only allows users who can view the report. */
+export async function reportAudioUrl(path: string): Promise<string> {
+  const supabase = await sb();
+  const { data, error } = await supabase.storage.from("report-audio").createSignedUrl(path, 300);
+  if (error || !data) throw error ?? new Error("audio");
+  return data.signedUrl;
+}
