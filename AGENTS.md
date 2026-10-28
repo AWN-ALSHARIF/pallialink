@@ -10,5 +10,6 @@
 <!-- LOVABLE:END -->
 
 ## Project rules
-- All demo data and role-based access checks live in `src/lib/store.ts` (localStorage-backed); UI must only call its functions so a real backend can replace it later.
+- Reports live in the Cloud database; UI only calls `src/lib/store.ts`, whose in-memory cache is a read-only mirror refreshed after each write (never write whole datasets back — that caused stale-tab overwrites).
+- All report writes go through security-definer DB functions (`submit_report`, `report_action`) that re-check role/assignment/status; tables grant authenticated SELECT only, gated by RLS `can_view_patient`. Demo personas are real auth accounts via `demoSignIn` server fn.
 - All UI copy goes through `src/lib/i18n.ts` (Arabic default, RTL); never hardcode strings in components.

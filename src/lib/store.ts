@@ -28,7 +28,7 @@ export interface Activity {
   at: string;
   byUserId: string;
   type: "created" | "status" | "assigned" | "note" | "nursing_obs" | "assessment" | "escalated" | "returned" | "closure_approved";
-  status?: Status;
+  status?: Status | undefined;
   assigneeId?: string | undefined;
   note?: string | undefined;
   plan?: string | undefined;
@@ -180,7 +180,7 @@ export function getReport(user: User, id: string): Report | undefined {
 
 async function rpcAction(id: string, action: Action, target?: string, note?: string, plan?: string) {
   const supabase = await sb();
-  const { error } = await supabase.rpc("report_action", { p_id: id, p_action: action, p_target: target, p_note: note, p_plan: plan });
+  const { error } = await supabase.rpc("report_action", { p_id: id, p_action: action, ...(target ? { p_target: target } : {}), ...(note ? { p_note: note } : {}), ...(plan ? { p_plan: plan } : {}) });
   if (error) throw new Error("forbidden");
   await refresh();
 }
