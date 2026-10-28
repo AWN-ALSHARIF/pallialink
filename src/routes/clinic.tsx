@@ -74,9 +74,9 @@ function Clinic() {
         {user.canApproveClosure && <span className="rounded-full bg-success/15 px-3 py-1 text-xs font-semibold">{t.closureAuthorized}</span>}
       </div>
       {scopes.length > 1 && (
-        <div className="mt-5 flex flex-wrap gap-2" role="tablist">
+        <div className="mt-5 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap" role="tablist">
           {scopes.map((s) => (
-            <button key={s.id} role="tab" aria-selected={scope === s.id} onClick={() => setScope(s.id)} className={`btn min-h-10 ${scope === s.id ? "btn-navy" : "btn-outline"}`}>
+            <button key={s.id} role="tab" aria-selected={scope === s.id} onClick={() => setScope(s.id)} className={`btn min-h-10 shrink-0 ${scope === s.id ? "btn-navy" : "btn-outline"}`}>
               {s.label} <span className="rounded-full bg-background/20 px-2 text-xs">{reports.filter((r) => inScopeFor(s.id, r)).length}</span>
             </button>
           ))}

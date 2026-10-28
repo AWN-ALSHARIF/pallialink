@@ -14,7 +14,7 @@ export function Logo() {
       </span>
       <span className="leading-tight">
         <span className="block text-lg font-bold text-navy">{t.brand}</span>
-        <span className="block text-xs text-primary">{t.tagline}</span>
+        <span className="hidden text-xs text-primary sm:block">{t.tagline}</span>
       </span>
     </Link>
   );
