@@ -40,6 +40,8 @@ function RecordPage() {
   const { t, lang } = useApp();
   const [rec, setRec] = useState<Rec | null | undefined>(undefined);
   const [tab, setTab] = useState<Tab>("history");
+  const [showTask, setShowTask] = useState(false);
+  const [showFollowUp, setShowFollowUp] = useState(false);
   const reload = useCallback(() => loadRecord(patientId).then(setRec, () => setRec(null)), [patientId]);
   useEffect(() => { if (user) void reload(); }, [user, reload]);
   if (!user) return null;
@@ -47,11 +49,28 @@ function RecordPage() {
   const back = <Link to="/records" className="inline-flex items-center gap-2 text-sm font-semibold text-primary"><Back className="size-4" /> {t.medicalRecord}</Link>;
   if (rec === undefined) return <AppShell>{back}<p className="mt-6 text-muted-foreground">…</p></AppShell>;
   if (rec === null) return <AppShell>{back}<p className="card mt-6 flex items-center justify-center gap-2 p-8 text-muted-foreground"><Lock className="size-4" />{t.noAccessRecord}</p></AppShell>;
+  const mayCoordinate = canCreateTask(user, patientId);
 
   return (
     <AppShell>
       {back}
       <Summary rec={rec} />
+      {mayCoordinate && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button className="btn btn-primary min-h-10" onClick={() => { setShowTask(!showTask); setShowFollowUp(false); }}>
+            <ClipboardList className="size-4" /> {t.newTask}
+          </button>
+          <button className="btn btn-outline min-h-10" onClick={() => { setShowFollowUp(!showFollowUp); setShowTask(false); }}>
+            <CalendarPlus className="size-4" /> {t.newFollowUp}
+          </button>
+        </div>
+      )}
+      {mayCoordinate && (showTask || showFollowUp) && (
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          {showTask && <NewTaskForm patientId={patientId} onDone={() => { setShowTask(false); void reload(); }} />}
+          {showFollowUp && <NewFollowUpForm patientId={patientId} onDone={() => { setShowFollowUp(false); void reload(); }} />}
+        </div>
+      )}
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1" role="tablist">
         {TABS.map((k) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`btn min-h-10 shrink-0 ${tab === k ? "btn-navy" : "btn-outline"}`}>{t.tabs[k]}</button>
