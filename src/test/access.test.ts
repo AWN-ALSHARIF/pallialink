@@ -50,4 +50,18 @@ describe("role hints", () => {
     expect(can(u("u-doc"), "assessment", r)).toBe(false);
     expect(can(u("u-doc"), "assessment", { ...r, status: "under_review" })).toBe(true);
   });
+  it("only the assigned physician can return, and only after acknowledging", () => {
+    const r = rep("R", "p1", "awaiting_physician", "u-doc");
+    __setReportsForTest([r]);
+    expect(can(u("u-doc"), "returnToNursing", r)).toBe(false);
+    expect(can(u("u-doc"), "returnToNursing", { ...r, status: "under_review" })).toBe(true);
+    expect(can(u("u-doc2"), "returnToNursing", { ...r, status: "under_review" })).toBe(false);
+  });
+  it("returned report: only the selected nurse acknowledges, then may re-escalate", () => {
+    const r = rep("S", "p1", "returned_to_nursing", "u-nurse");
+    __setReportsForTest([r]);
+    expect(can(u("u-nurse"), "returnAck", r)).toBe(true);
+    expect(can(u("u-nurse"), "escalate", r)).toBe(false);
+    expect(can(u("u-nurse"), "escalate", { ...r, status: "nursing_follow_up" })).toBe(true);
+  });
 });
