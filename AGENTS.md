@@ -13,3 +13,6 @@
 - Reports live in the Cloud database; UI only calls `src/lib/store.ts`, whose in-memory cache is a read-only mirror refreshed after each write (never write whole datasets back — that caused stale-tab overwrites).
 - All report writes go through security-definer DB functions (`submit_report`, `report_action`) that re-check role/assignment/status; tables grant authenticated SELECT only, gated by RLS `can_view_patient`. Demo personas are real auth accounts via `demoSignIn` server fn.
 - All UI copy goes through `src/lib/i18n.ts` (Arabic default, RTL); never hardcode strings in components.
+- Report visibility is report-level (`can_view_report`): physicians see only reports assigned to or acknowledged by them; patient-level `can_view_patient` is org-scoped. Mirror both in `store.ts` `canViewReport`/`canViewPatient`.
+- Nurse and physician acknowledgments are separate columns; assignment to a physician sets `awaiting_physician` and never acknowledges on the physician's behalf.
+- Eligible physicians come from the `list_assignable_physicians` RPC, never a hardcoded/care-team list.
