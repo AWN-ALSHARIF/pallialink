@@ -60,7 +60,7 @@ interface DB { reports: Report[]; seq: number }
 
 export const USERS: User[] = [
   { id: "u-pat", role: "patient", nameAr: "رنا عبدالعزيز", nameEn: "Rana Abdulaziz", patientId: "p1" },
-  { id: "u-cg", role: "caregiver", nameAr: "طارق عبدالله", nameEn: "Tariq Abdullah", patientId: "p2" },
+  { id: "u-cg", role: "caregiver", nameAr: "طارق عبدالله", nameEn: "Tariq Abdullah", patientId: "p1" },
   { id: "u-nurse", role: "nurse", nameAr: "الياس فارس", nameEn: "Elias Fares" },
   { id: "u-doc", role: "physician", nameAr: "منوال خالد", nameEn: "Manwal Khaled", canApproveClosure: true },
   { id: "u-doc2", role: "physician", nameAr: "ريما سالم", nameEn: "Reema Salem" },
