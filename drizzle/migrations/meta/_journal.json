@@ -85,6 +85,13 @@
       "when": 1793194765416,
       "tag": "0011_care_hub_tasks_followups_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793219978419,
+      "tag": "0012_command_center_permissions",
+      "breakpoints": true
     }
   ]
 }

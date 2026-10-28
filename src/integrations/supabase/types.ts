@@ -53,6 +53,67 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          at: string
+          id: number
+          new_value: Json | null
+          old_value: Json | null
+          org_id: string
+          resource_id: string | null
+          resource_type: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          at?: string
+          id?: number
+          new_value?: Json | null
+          old_value?: Json | null
+          org_id: string
+          resource_id?: string | null
+          resource_type?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          at?: string
+          id?: number
+          new_value?: Json | null
+          old_value?: Json | null
+          org_id?: string
+          resource_id?: string | null
+          resource_type?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+          {
+            foreignKeyName: "admin_audit_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_audit_log_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+        ]
+      }
       app_users: {
         Row: {
           active: boolean
@@ -772,6 +833,42 @@ export type Database = {
           },
         ]
       }
+      staff_permissions: {
+        Row: {
+          granted_at: string
+          granted_by: string
+          permission: string
+          persona_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by: string
+          permission: string
+          persona_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string
+          permission?: string
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_permissions_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+          {
+            foreignKeyName: "staff_permissions_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -789,6 +886,86 @@ export type Database = {
           st: string
           sy: string[]
         }
+        Returns: undefined
+      }
+      _require_admin: {
+        Args: never
+        Returns: {
+          active: boolean
+          auth_id: string | null
+          can_approve_closure: boolean
+          name_ar: string
+          name_en: string
+          org_id: string
+          patient_id: string | null
+          persona_id: string
+          role: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "app_users"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_list_open_tasks: {
+        Args: never
+        Returns: {
+          category: string
+          due_at: string
+          id: string
+          nurse_id: string
+          patient_id: string
+          status: string
+        }[]
+      }
+      admin_list_staff: {
+        Args: never
+        Returns: {
+          active: boolean
+          can_approve_closure: boolean
+          name_ar: string
+          name_en: string
+          open_reports: number
+          open_tasks: number
+          patient_count: number
+          permissions: string[]
+          persona_id: string
+          role: string
+        }[]
+      }
+      admin_metrics: {
+        Args: { p_bucket?: string; p_from: string; p_to: string }
+        Returns: Json
+      }
+      admin_patient_overview: {
+        Args: never
+        Returns: {
+          care_team: string[]
+          last_update: string
+          mrn: string
+          name_ar: string
+          name_en: string
+          next_followup: string
+          open_reports: number
+          open_tasks: number
+          patient_id: string
+        }[]
+      }
+      admin_reassign_task: {
+        Args: { p_nurse: string; p_task: string }
+        Returns: undefined
+      }
+      admin_set_care_team: {
+        Args: { p_patient: string; p_team: string[] }
+        Returns: undefined
+      }
+      admin_set_permission: {
+        Args: { p_enabled: boolean; p_permission: string; p_persona: string }
+        Returns: undefined
+      }
+      admin_set_staff_active: {
+        Args: { p_active: boolean; p_persona: string }
         Returns: undefined
       }
       can_view_patient: { Args: { p: string }; Returns: boolean }
@@ -854,6 +1031,10 @@ export type Database = {
       emr_update_profile: {
         Args: { p_fields: Json; p_patient: string }
         Returns: undefined
+      }
+      has_permission: {
+        Args: { p_perm: string; p_persona: string }
+        Returns: boolean
       }
       is_clinician: { Args: never; Returns: boolean }
       list_assignable_nurses: {
