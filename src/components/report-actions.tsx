@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useApp, useFmtDate, useName } from "@/lib/app";
 import {
   addAssessment, addNursingObservation, adminAssign, approveClosure, can, CLINICIANS, escalateToPhysician,
-  listAssignablePhysicians, NURSES, nurseAcknowledge, patientById, physicianAcknowledge, returnToNursing, userById,
+  listAssignableNurses, listAssignablePhysicians, nurseAcknowledge, patientById, physicianAcknowledge, returnAcknowledge, returnToNursing, userById,
   type Report, type User,
 } from "@/lib/store";
 
@@ -55,6 +55,9 @@ function NurseActions({ user, r }: { user: User; r: Report }) {
   }, [r.id, r.assigneeId]);
   return (
     <>
+      {can(user, "returnAck", r) && (
+        <button className="btn btn-primary min-h-12 w-full" onClick={() => run(() => returnAcknowledge(user, r.id))}>{t.returnAckBtn}</button>
+      )}
       {can(user, "nurseAck", r) && (
         <button className="btn btn-primary min-h-12 w-full" onClick={() => run(() => nurseAcknowledge(user, r.id))}>{t.nurseAck}</button>
       )}
@@ -68,6 +71,7 @@ function NurseActions({ user, r }: { user: User; r: Report }) {
         </select>
         <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.noteOptional} className="field" disabled={!can(user, "escalate", r)} />
         {r.status === "submitted" && <Hint>{t.ackFirst}</Hint>}
+        {r.status === "returned_to_nursing" && <Hint>{t.returnAckFirst}</Hint>}
         <button disabled={!doc || !can(user, "escalate", r) || r.assigneeId === doc} className="btn btn-navy w-full" onClick={() => run(() => escalateToPhysician(user, r.id, doc, note), () => setNote(""))}>{t.escalateBtn}</button>
       </Panel>
       <Hint>{t.physicianOnly}</Hint>
@@ -81,11 +85,18 @@ function PhysicianActions({ user, r }: { user: User; r: Report }) {
   const run = useRun();
   const [assessment, setAssessment] = useState("");
   const [plan, setPlan] = useState("");
-  const careTeam = patientById(r.patientId)?.careTeam ?? [];
-  const nurses = NURSES.filter((n) => careTeam.includes(n.id));
-  const [nurse, setNurse] = useState(nurses[0]?.id ?? "");
+  const [nurses, setNurses] = useState<{ id: string; nameAr: string; nameEn: string }[]>([]);
+  const [nurse, setNurse] = useState("");
   const [note, setNote] = useState("");
-  if (r.assigneeId !== user.id) return <Hint>{t.notAssignedToYou}</Hint>;
+  const isMine = r.assigneeId === user.id;
+  // Eligible nurses come from the server (care team, active, same organization).
+  useEffect(() => {
+    if (!isMine) return;
+    let live = true;
+    listAssignableNurses(r.id).then((l) => { if (live) { setNurses(l); setNurse((c) => c || l[0]?.id || ""); } }, () => live && setNurses([]));
+    return () => { live = false; };
+  }, [r.id, isMine]);
+  if (!isMine) return <Hint>{t.notAssignedToYou}</Hint>;
   const canAssess = can(user, "assessment", r);
   return (
     <>
@@ -104,8 +115,9 @@ function PhysicianActions({ user, r }: { user: User; r: Report }) {
         <select className="field" value={nurse} onChange={(e) => setNurse(e.target.value)} aria-label={t.chooseNurse} disabled={!can(user, "returnToNursing", r)}>
           {nurses.map((n) => <option key={n.id} value={n.id}>{name(n)}</option>)}
         </select>
-        <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.noteOptional} className="field" disabled={!can(user, "returnToNursing", r)} />
-        <button disabled={!nurse || !can(user, "returnToNursing", r)} className="btn btn-outline w-full" onClick={() => run(() => returnToNursing(user, r.id, nurse, note), () => setNote(""))}>{t.returnBtn}</button>
+        <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.reasonRequired} aria-label={t.reasonRequired} className="field" disabled={!can(user, "returnToNursing", r)} />
+        {!can(user, "returnToNursing", r) && r.status === "awaiting_physician" && <Hint>{t.returnAfterAck}</Hint>}
+        <button disabled={!nurse || !note.trim() || !can(user, "returnToNursing", r)} className="btn btn-outline w-full" onClick={() => run(() => returnToNursing(user, r.id, nurse, note), () => setNote(""))}>{t.returnBtn}</button>
       </Panel>
       <Panel title={t.approveClosure}>
         {!user.canApproveClosure ? <Hint>{t.noClosureAuth}</Hint>

@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { HeartHandshake, Search, Stethoscope, UserCog } from "lucide-react";
+import { FileText, HeartHandshake, Search, Stethoscope, UserCog } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
-import { listReports, patientById, PHYSICIANS, STATUSES, userById, type Report, type Status } from "@/lib/store";
+import { listReports, needsNurseAction, patientById, PHYSICIANS, STATUSES, userById, type Report, type Status } from "@/lib/store";
 
 type Scope = "default" | "mine" | "escalated" | "all";
 
@@ -37,7 +37,7 @@ function Clinic() {
   if (!user) return null;
 
   const scopes: { id: Scope; label: string }[] =
-    user.role === "nurse" ? [{ id: "default", label: t.scopeNew }, { id: "mine", label: t.scopeMine }, { id: "escalated", label: t.scopeEscalated }, { id: "all", label: t.scopeAll }]
+    user.role === "nurse" ? [{ id: "default", label: t.scopeAction }, { id: "mine", label: t.scopeMine }, { id: "escalated", label: t.scopeEscalated }, { id: "all", label: t.scopeAll }]
     : user.role === "physician" ? [{ id: "default", label: t.scopeMine }]
     : [];
   const inScopeFor = (sc: Scope, r: Report) => {
@@ -45,7 +45,7 @@ function Clinic() {
     if (user.role === "physician") return r.assigneeId === user.id;
     if (sc === "mine") return r.assigneeId === user.id;
     if (sc === "escalated") return PHYSICIANS.some((p) => p.id === r.assigneeId);
-    return r.status === "submitted" || r.assigneeId === user.id; // nurse default: new + mine
+    return needsNurseAction(user, r); // nurse default: items requiring her action
   };
   const filtered = reports.filter((r) => inScopeFor(scope, r)).filter((r) => {
     const p = patientById(r.patientId);
@@ -57,7 +57,8 @@ function Clinic() {
   const stats = [
     { label: t.totalReports, value: scoped.length, tone: "text-navy" },
     { label: t.awaiting, value: count("submitted"), tone: "text-warning" },
-    { label: t.inProgress, value: count("acknowledged") + count("awaiting_physician") + count("under_review") + count("follow_up"), tone: "text-primary" },
+    { label: t.returnedCount, value: count("returned_to_nursing"), tone: "text-destructive" },
+    { label: t.inProgress, value: count("acknowledged") + count("awaiting_physician") + count("under_review") + count("follow_up") + count("nursing_follow_up"), tone: "text-primary" },
     { label: t.closedCount, value: count("closed"), tone: "text-success" },
   ];
   const chart = STATUSES.map((s) => ({ name: t.status[s], value: count(s) }));
@@ -69,6 +70,7 @@ function Clinic() {
           {user.role === "physician" ? <Stethoscope className="size-5" /> : user.role === "nurse" ? <HeartHandshake className="size-5" /> : <UserCog className="size-5" />}
         </span>
         <h1 className="text-3xl font-bold text-navy">{user.role === "nurse" ? t.nurseDashboard : user.role === "physician" ? t.physicianDashboard : t.adminDashboard}</h1>
+        {user.role !== "admin" && <Link to="/records" className="btn btn-outline ms-auto min-h-10"><FileText className="size-4" /> {t.medicalRecord}</Link>}
         {user.canApproveClosure && <span className="rounded-full bg-success/15 px-3 py-1 text-xs font-semibold">{t.closureAuthorized}</span>}
       </div>
       {scopes.length > 1 && (
@@ -80,7 +82,7 @@ function Clinic() {
           ))}
         </div>
       )}
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
         {stats.map((s) => (
           <div key={s.label} className="card p-5">
             <div className="text-sm text-muted-foreground">{s.label}</div>
