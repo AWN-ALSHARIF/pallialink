@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, HeartPulse, Languages, LogOut, RotateCcw, ShieldAlert } from "lucide-react";
+import { Bell, HeartPulse, Languages, LogOut, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useApp, useFmtDate, useName } from "@/lib/app";
-import { isClinical, patientById, resetDemo, type Status } from "@/lib/store";
+import { isClinical, patientById, type Status } from "@/lib/store";
 import { listNotifications, markNotificationsRead, type AppNotification } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
 
@@ -48,9 +48,16 @@ function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const clinical = !!user && isClinical(user.role);
   const load = useCallback(() => {
-    if (clinical) listNotifications().then(setItems, () => {});
-  }, [clinical]);
-  useEffect(load, [load]);
+    if (clinical) return listNotifications().then(setItems, () => {});
+    return Promise.resolve();
+  }, [clinical, user?.id]);
+  useEffect(() => {
+    let live = true;
+    setItems(null);
+    setOpen(false);
+    if (clinical) void listNotifications().then((next) => { if (live) setItems(next); }, () => {});
+    return () => { live = false; };
+  }, [clinical, user?.id]);
   useEffect(() => {
     const onFocus = () => load();
     window.addEventListener("focus", onFocus);
@@ -99,9 +106,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-muted/40">
       <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
-          <Logo />
-          <div className="flex items-center gap-2">
+        <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 sm:flex sm:justify-between sm:gap-3">
+          <div className="min-w-0"><Logo /></div>
+          <div className="flex shrink-0 items-center gap-2">
             {user && (
               <div className="hidden text-end sm:block">
                 <div className="text-sm font-semibold">{name(user)}</div>
@@ -110,9 +117,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
             <NotificationsBell />
             <LangButton />
-            <button className="btn btn-outline min-h-10 px-3" title={t.resetDemo} aria-label={t.resetDemo} onClick={() => { void resetDemo().catch(() => {}); }}>
-              <RotateCcw className="size-4" />
-            </button>
             <button
               className="btn btn-outline min-h-10 px-3"
               aria-label={t.signOut}

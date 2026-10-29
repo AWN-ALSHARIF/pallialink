@@ -102,6 +102,7 @@ export async function createFollowup(patientId: string, purpose: string, respons
     p_patient: patientId, p_purpose: purpose, p_responsible: responsibleId, p_target_date: targetDate,
   });
   if (error) throw new Error("forbidden");
+  clinicalReadCache.clear();
 }
 export async function updateFollowup(id: number, status: "done" | "cancelled", notes?: string) {
   const supabase = await sb();
@@ -109,6 +110,7 @@ export async function updateFollowup(id: number, status: "done" | "cancelled", n
     p_id: id, p_status: status, ...(notes?.trim() ? { p_notes: notes.trim() } : {}),
   });
   if (error) throw new Error("forbidden");
+  clinicalReadCache.clear();
 }
 /** Eligible nurses for a new task: active, same org, on the patient's care team (server-checked). */
 export async function listCareTeamNurses(patientId: string): Promise<{ id: string; nameAr: string; nameEn: string }[]> {
@@ -118,6 +120,7 @@ export async function listCareTeamNurses(patientId: string): Promise<{ id: strin
   return (data ?? []).map((d) => ({ id: d.persona_id, nameAr: d.name_ar, nameEn: d.name_en }));
 }
 export async function listNotifications(): Promise<AppNotification[]> {
+  return cachedRead("notifications", async () => {
   const supabase = await sb();
   const { data, error } = await supabase.rpc("list_notifications");
   if (error) throw error;
@@ -126,11 +129,14 @@ export async function listNotifications(): Promise<AppNotification[]> {
     id: r.id, userId: r.user_id, patientId: r.patient_id, kind: r.kind, refId: r.ref_id,
     createdAt: r.created_at, readAt: r.read_at,
   }));
+  });
 }
 export async function markNotificationsRead(ids: number[]) {
   if (!ids.length) return;
   const supabase = await sb();
-  await supabase.rpc("mark_notifications_read", { p_ids: ids });
+  const { error } = await supabase.rpc("mark_notifications_read", { p_ids: ids });
+  if (error) throw error;
+  clinicalReadCache.clear();
 }
 
 // ---- Permission mirrors (the database re-checks every write) ----
