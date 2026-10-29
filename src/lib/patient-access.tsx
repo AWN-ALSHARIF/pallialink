@@ -35,12 +35,12 @@ export function PatientAccessProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     if (identity) {
-      root.dataset.patientText = features.textSize;
-      root.dataset.patientContrast = features.highContrast ? "high" : "standard";
-      root.dataset.patientMotion = features.reducedMotion ? "reduced" : "standard";
-      root.dataset.patientSimple = features.simplified ? "true" : "false";
+      root.dataset["patientText"] = features.textSize;
+      root.dataset["patientContrast"] = features.highContrast ? "high" : "standard";
+      root.dataset["patientMotion"] = features.reducedMotion ? "reduced" : "standard";
+      root.dataset["patientSimple"] = features.simplified ? "true" : "false";
     }
-    return () => { delete root.dataset.patientText; delete root.dataset.patientContrast; delete root.dataset.patientMotion; delete root.dataset.patientSimple; };
+    return () => { delete root.dataset["patientText"]; delete root.dataset["patientContrast"]; delete root.dataset["patientMotion"]; delete root.dataset["patientSimple"]; };
   }, [identity, features.textSize, features.highContrast, features.reducedMotion, features.simplified]);
   return <Context.Provider value={{ draft, loading: !!identity && (state.identity !== identity || state.loading), failed: state.identity === identity && state.failed, reload }}>{children}</Context.Provider>;
 }
