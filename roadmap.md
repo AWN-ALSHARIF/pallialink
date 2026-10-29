@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Activate patient accessibility preferences, visual communication, voice/read-aloud and accessible navigation; verify real saved settings and authorized request delivery without schema changes
+- [x] Activate saved patient choices, visual requests, voice shortcut/recording, read-aloud browser integration and accessible navigation; verified nursing request PL-01025, persistence, RTL/LTR and 43 tests without schema changes (real speech output unavailable: test browser has no voices)
 - [x] Access+ Phase 1: inspect architecture and prepare complete SQL and implementation plan for approval
 - [x] Access+ Phase 1: approved persistence, scoped permission management, patient self-service and profile interfaces
 - [x] Access+ Phase 1: approved least-privilege correction; effective grants, anonymous/direct-write denials, scoped saves, persistence and audit verified; 35 tests passed
