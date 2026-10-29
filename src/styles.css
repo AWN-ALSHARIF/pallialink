@@ -113,3 +113,20 @@
   border: 1px solid var(--input); background: var(--card);
   &:focus { outline: 2px solid var(--ring); outline-offset: 1px; }
 }
+
+/* Patient preferences apply to all patient routes, never persisted offline. */
+html[data-patient-text="large"] { font-size: 20px; }
+html[data-patient-text="extra_large"] { font-size: 24px; }
+html[data-patient-contrast="high"] {
+  --background: oklch(1 0 0); --card: oklch(1 0 0); --muted: oklch(0.97 0 0);
+  --foreground: oklch(0.15 0 0); --card-foreground: oklch(0.15 0 0); --navy: oklch(0.15 0 0);
+  --muted-foreground: oklch(0.3 0 0); --primary: oklch(0.38 0.08 192); --ring: oklch(0.38 0.08 192);
+  --border: oklch(0.38 0 0); --input: oklch(0.38 0 0); --accent-foreground: oklch(0.2 0 0);
+  --success: oklch(0.35 0.08 155); --destructive: oklch(0.42 0.17 27);
+}
+html[data-patient-motion="reduced"] *, html[data-patient-motion="reduced"] *::before, html[data-patient-motion="reduced"] *::after {
+  animation: none !important; transition: none !important; scroll-behavior: auto !important;
+}
+html[data-patient-simple="true"] :is(button, .btn, .field) { min-height: 3.5rem; }
+:is(button, a, input, select, textarea, summary):focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

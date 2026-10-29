@@ -5,6 +5,9 @@ import { useApp, useFmtDate, useName } from "@/lib/app";
 import { isClinical, patientById, type Status } from "@/lib/store";
 import { listNotifications, markNotificationsRead, type AppNotification } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
+import { patientFeatures, usePatientAccess } from "@/lib/patient-access";
+import { Button } from "@/components/ui/button";
+import { ReadAloud } from "@/components/patient-communication";
 
 export function Logo() {
   const { t } = useApp();
@@ -101,10 +104,13 @@ function NotificationsBell() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, user, setUserId } = useApp();
+  const { draft } = usePatientAccess();
+  const features = patientFeatures(draft);
   const name = useName();
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-muted/40">
+      <a href="#patient-content" className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:bg-background focus:p-4">{t.access.skipContent}</a>
       <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 sm:flex sm:justify-between sm:gap-3">
           <div className="min-w-0"><Logo /></div>
@@ -128,7 +134,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6 md:py-8">{children}</main>
+      {user?.role === "patient" && features.simplified && <nav aria-label={t.brand} className="mx-auto flex max-w-7xl flex-wrap gap-3 px-4 pt-4"><Button asChild className="min-h-14"><Link to="/patient">{t.backHome}</Link></Button><Button asChild variant="outline" className="min-h-14"><Link to="/report">{t.newReport}</Link></Button></nav>}
+      <main id="patient-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-6 md:py-8">{user?.role === "patient" && features.tts && <ReadAloud />}{children}</main>
     </div>
   );
 }

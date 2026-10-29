@@ -10,6 +10,8 @@
 <!-- LOVABLE:END -->
 
 ## Project rules
+- Patient display adaptation uses an identity-scoped memory-only provider and root data attributes; refresh after checked preference saves and clear on identity changes. Why: apply preferences across patient routes without offline PHI or cross-account leakage.
+- Pictogram requests use existing checked report submission with explicit patient-entered pain and non-diagnostic notes, routed to the nursing queue and physician assignment workflow. Why: preserve existing schema and report-level authorization without fabricating severity or diagnoses.
 - Access+ uses separate staff support and patient-choice tables through src/lib/accessibility.ts checked RPCs; require explicit dedicated permission and current same-org care-team scope for staff edits, and never cache sensitive preferences offline. Why: preserve clinical records and isolate patient self-service from staff authority.
 - Accessibility copy is composed into the central i18n dictionary from accessibility-i18n.ts. Why: keep one translation entry point while containing the feature vocabulary.
 - Reports live in the Cloud database; UI only calls `src/lib/store.ts`, whose in-memory cache is a read-only mirror refreshed after each write (never write whole datasets back — that caused stale-tab overwrites).

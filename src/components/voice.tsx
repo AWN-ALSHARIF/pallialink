@@ -2,6 +2,7 @@ import { Mic, Square, Trash2, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/lib/app";
 import { AUDIO_MAX_BYTES, AUDIO_MAX_S, reportAudioUrl } from "@/lib/store";
+import { Button } from "./ui/button";
 
 export type Recording = { blob: Blob; durationS: number };
 
@@ -66,18 +67,18 @@ export function VoiceRecorder({ value, onChange }: { value: Recording | null; on
       <h2 className="text-lg font-bold">{t.voice.title}</h2>
       <p className="mt-1 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">{t.voice.warn}</p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        {!value && !recording && <button type="button" onClick={begin} className="btn btn-outline min-h-12"><Mic className="size-5" /> {t.voice.record}</button>}
+        {!value && !recording && <Button type="button" variant="outline" onClick={begin} className="min-h-12"><Mic className="size-5" /> {t.voice.record}</Button>}
         {recording && (
           <>
-            <button type="button" onClick={stop} className="btn btn-primary min-h-12"><Square className="size-5" /> {t.voice.stop}</button>
+            <Button type="button" onClick={stop} className="min-h-12"><Square className="size-5" /> {t.voice.stop}</Button>
             <span className="flex items-center gap-2 font-mono font-bold text-destructive" dir="ltr" aria-live="polite"><span className="size-2.5 animate-pulse rounded-full bg-destructive" />{t.voice.recording} {secs}/{AUDIO_MAX_S}{t.voice.sec}</span>
           </>
         )}
         {value && url && (
           <>
-            <audio controls src={url} className="max-w-full" />
+            <audio aria-label={t.voice.title} controls src={url} className="max-w-full" />
             <span className="text-sm text-muted-foreground">{t.voice.duration}: <span dir="ltr">{Math.round(value.durationS)}{t.voice.sec}</span></span>
-            <button type="button" onClick={() => onChange(null)} className="btn btn-outline min-h-10"><Trash2 className="size-4" /> {t.voice.del}</button>
+            <Button type="button" variant="outline" onClick={() => onChange(null)} className="min-h-11"><Trash2 className="size-4" /> {t.voice.del}</Button>
           </>
         )}
       </div>
@@ -96,7 +97,7 @@ export function VoicePlayer({ path, durationS }: { path: string; durationS?: num
     <section className="card border-primary/40 p-6">
       <h2 className="flex items-center gap-2 font-bold text-navy"><Volume2 className="size-5 text-primary" /> {t.voice.patientVoice}</h2>
       {durationS != null && <p className="mt-1 text-sm text-muted-foreground">{t.voice.duration}: <span dir="ltr">{durationS}{t.voice.sec}</span></p>}
-      {err ? <p className="mt-3 text-sm text-destructive">{t.voice.loadErr}</p> : url ? <audio controls src={url} className="mt-3 w-full" /> : <div className="mt-3 h-12 animate-pulse rounded-lg bg-muted" />}
+      {err ? <p className="mt-3 text-sm text-destructive" role="alert">{t.voice.loadErr}</p> : url ? <audio aria-label={t.voice.patientVoice} controls src={url} className="mt-3 w-full" /> : <div className="mt-3 h-12 animate-pulse rounded-lg bg-muted" />}
     </section>
   );
 }
