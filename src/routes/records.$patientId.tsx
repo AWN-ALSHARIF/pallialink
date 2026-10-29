@@ -14,7 +14,7 @@ import { listReports, userById, type User } from "@/lib/store";
 import { canCreateTask, listFollowUps, listTasks, type FollowUp, type NursingTask } from "@/lib/tasks";
 
 export const Route = createFileRoute("/records/$patientId")({
-  validateSearch: (s: Record<string, unknown>): { section?: "accessibility" } => ({ section: s['section'] === "accessibility" ? "accessibility" : undefined }),
+  validateSearch: (s: Record<string, unknown>): { section?: "accessibility" } => (s['section'] === "accessibility" ? { section: "accessibility" } : {}),
   head: () => ({
     meta: [
       { title: "Patient medical record | PalliaLink" },
@@ -224,13 +224,13 @@ function EntryRow({ e }: { e: Entry }) {
 
 function EntriesTab({ tab, rec, user, onSaved }: { tab: Tab; rec: Rec; user: User; onSaved: () => Promise<unknown> }) {
   const { t } = useApp();
-  const kinds = TAB_KINDS[tab]!;
+  const kinds = TAB_KINDS[tab] ?? [];
   const list = rec.entries.filter((e) => kinds.includes(e.kind) && !(e.kind === "encounter" && e.title === "profile_update"));
   const writable = kinds.filter((k) => (WRITABLE[user.role] ?? []).includes(k));
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <section className="card p-6 lg:col-span-2">
-        <h2 className="font-bold text-navy">{t.tabs[tab]}</h2>
+        <h2 className="font-bold text-navy">{tab === "accessibility" ? t.access.title : t.tabs[tab]}</h2>
         {tab === "medications" ? (
           <>
             <h3 className="mt-4 text-sm font-semibold">{t.currentMeds}</h3>

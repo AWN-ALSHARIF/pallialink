@@ -36,7 +36,7 @@ function ReviewFields({ draft, onChange }: { draft: AccessibilityDraft; onChange
 function PreferenceSummary({ draft, personal }: { draft: AccessibilityDraft | PersonalDraft; personal: boolean }) {
   const { t: { access: a }, lang } = useApp();
   const support = "needs" in draft ? draft : null;
-  const prefs = "preferences" in draft ? draft.preferences : draft.interface_preferences;
+  const prefs: InterfacePreferences = "preferences" in draft ? draft.preferences : draft.interface_preferences;
   const list = (values: string[]) => values.length ? values.join(lang === "ar" ? "، " : ", ") : a.notSet;
   return <div className="space-y-4 text-sm">
     {support && <div><h3 className="font-semibold text-muted-foreground">{a.needsTitle}</h3><p className="mt-1">{list(support.needs.map((n) => a.needs[n]))}</p>{support.other_need && <p className="mt-1 whitespace-pre-wrap break-words">{support.other_need}</p>}</div>}
