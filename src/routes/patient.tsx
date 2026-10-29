@@ -86,7 +86,7 @@ function PatientHome() {
       </div>
       </div>
       {simple && <Button variant="outline" className="mt-6 min-h-14 ms-3" aria-expanded={settingsOpen} aria-controls="patient-settings" onClick={() => setSettingsOpen(!settingsOpen)}>{t.access.settingsToggle}</Button>}
-      {user.role === "patient" && user.patientId && <div id="patient-settings" hidden={simple && !settingsOpen} className="mt-10 border-t"><AccessibilityPanel key={`${user.id}:${user.patientId}`} patientId={user.patientId} personal /></div>}
+      {user.role === "patient" && user.patientId && <div id="patient-settings" hidden={simple && !settingsOpen} className="mt-10 border-t" onFocusCapture={() => setSettingsOpen(true)}><AccessibilityPanel key={`${user.id}:${user.patientId}`} patientId={user.patientId} personal /></div>}
       <Disclaimer className="mt-10" />
     </AppShell>
   );
