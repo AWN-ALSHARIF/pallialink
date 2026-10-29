@@ -8,6 +8,7 @@ import { useGuard } from "@/lib/guard";
 import { submitReport, SYMPTOMS, type Report, type Symptom } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { VoiceRecorder, type Recording } from "@/components/voice";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/report")({
   head: () => ({
@@ -74,13 +75,10 @@ function ReportPage() {
           <p className="text-sm text-muted-foreground">{t.painHint}</p>
           <div className="mt-4 grid grid-cols-6 gap-2 sm:grid-cols-11" role="radiogroup" aria-label={t.painLevel}>
             {Array.from({ length: 11 }, (_, i) => (
-              <button
+              <label
                 key={i}
-                role="radio"
-                aria-checked={pain === i}
-                onClick={() => setPain(i)}
-                className={cn("grid h-14 place-items-center rounded-xl border-2 text-xl font-bold transition", painTone(i, pain === i))}
-              >{i}</button>
+                className={cn("flex min-h-14 items-center justify-center gap-1 rounded-xl border-2 text-xl font-bold transition", painTone(i, pain === i))}
+              ><input type="radio" name="report-pain" aria-label={`${t.painLevel} ${i}`} checked={pain === i} onChange={() => setPain(i)} className="size-4 accent-primary" />{i}</label>
             ))}
           </div>
         </section>
@@ -88,12 +86,12 @@ function ReportPage() {
           <h2 className="text-lg font-bold">{t.otherSymptoms}</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {SYMPTOMS.map((s) => (
-              <button
+              <Button
                 key={s}
                 aria-pressed={symptoms.includes(s)}
                 onClick={() => toggle(s)}
                 className={cn("min-h-14 rounded-xl border-2 px-4 text-start font-semibold transition", symptoms.includes(s) ? "border-primary bg-accent text-accent-foreground" : "border-border hover:border-primary")}
-              >{t.symptoms[s]}</button>
+              >{t.symptoms[s]}</Button>
             ))}
           </div>
         </section>
@@ -102,7 +100,7 @@ function ReportPage() {
           <textarea id="notes" rows={4} maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPh} className="field mt-3" />
         </section>
         <section className="card p-6"><VoiceRecorder value={audio} onChange={setAudio} /></section>
-        <button disabled={pain === null || busy} onClick={submit} className="btn btn-primary min-h-14 w-full text-lg">{t.submit}</button>
+        <Button disabled={pain === null || busy} onClick={submit} className="min-h-14 w-full text-lg">{t.submit}</Button>
         <Disclaimer />
       </div>
     </AppShell>

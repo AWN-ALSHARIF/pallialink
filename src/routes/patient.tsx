@@ -1,5 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
+import { useState } from "react";
+import { PatientCommunication } from "@/components/patient-communication";
+import { patientFeatures, usePatientAccess } from "@/lib/patient-access";
+import { Button } from "@/components/ui/button";
 import { AppShell, Disclaimer, PainPill, StatusBadge } from "@/components/shell";
 import { AccessibilityPanel } from "@/components/accessibility";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
@@ -23,6 +27,10 @@ export const Route = createFileRoute("/patient")({
 function PatientHome() {
   const user = useGuard("patient");
   const { t } = useApp();
+  const { draft } = usePatientAccess();
+  const simple = patientFeatures(draft).simplified;
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const name = useName();
   const fmt = useFmtDate();
   useStoreVersion();
@@ -41,7 +49,8 @@ function PatientHome() {
         <Link to="/report" className="btn btn-primary min-h-14 px-7 text-lg"><Plus className="size-5" /> {t.newReport}</Link>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <PatientCommunication key={user.id} />
+      <div className={simple ? "hidden" : "mt-6 grid gap-4 md:grid-cols-3"}>
         <div className="card p-5">
           <div className="text-sm text-muted-foreground">{t.patientOverview}</div>
           <div className="mt-1 text-xl font-bold text-navy">{name(patient)}</div>
@@ -59,7 +68,8 @@ function PatientHome() {
         </div>
       </div>
 
-      <h2 className="mt-10 text-xl font-bold text-navy">{t.reportHistory}</h2>
+      {simple && <Button variant="outline" className="mt-6 min-h-14" aria-expanded={historyOpen} aria-controls="patient-history" onClick={() => setHistoryOpen(!historyOpen)}>{t.access.historyToggle}</Button>}
+      <div id="patient-history" hidden={simple && !historyOpen}><h2 className="mt-10 text-xl font-bold text-navy">{t.reportHistory}</h2>
       <div className="mt-4 space-y-3">
         {reports.length === 0 && <p className="text-muted-foreground">{t.noReports}</p>}
         {reports.map((r) => (
@@ -74,7 +84,9 @@ function PatientHome() {
           </div>
         ))}
       </div>
-      {user.role === "patient" && user.patientId && <div className="mt-10 border-t"><AccessibilityPanel key={`${user.id}:${user.patientId}`} patientId={user.patientId} personal /></div>}
+      </div>
+      {simple && <Button variant="outline" className="mt-6 min-h-14 ms-3" aria-expanded={settingsOpen} aria-controls="patient-settings" onClick={() => setSettingsOpen(!settingsOpen)}>{t.access.settingsToggle}</Button>}
+      {user.role === "patient" && user.patientId && <div id="patient-settings" hidden={simple && !settingsOpen} className="mt-10 border-t"><AccessibilityPanel key={`${user.id}:${user.patientId}`} patientId={user.patientId} personal /></div>}
       <Disclaimer className="mt-10" />
     </AppShell>
   );

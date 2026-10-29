@@ -11,6 +11,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import { AppProvider } from "../lib/app";
+import { PatientAccessProvider } from "../lib/patient-access";
 import { Toaster } from "../components/ui/sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -132,7 +133,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <AppProvider>
-        <Outlet />
+        <PatientAccessProvider><Outlet /></PatientAccessProvider>
         <Toaster position="top-center" />
       </AppProvider>
     </QueryClientProvider>

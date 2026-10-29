@@ -3,6 +3,7 @@ import { Accessibility, Check, Lock, Pencil, RotateCcw, Save } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { useApp, useFmtDate, useName } from "@/lib/app";
 import { userById } from "@/lib/store";
+import { usePatientAccess } from "@/lib/patient-access";
 import {
   ACCESSIBILITY_NEEDS, COMMUNICATION_METHODS, INTERFACE_FLAGS, PATIENT_FLAGS,
   emptyAccessibility, emptyPersonal, loadAccessibility, loadPersonal, personalDraft, profileDraft,
@@ -48,6 +49,7 @@ function PreferenceSummary({ draft, personal }: { draft: AccessibilityDraft | Pe
 
 export function AccessibilityPanel({ patientId, personal = false }: { patientId: string; personal?: boolean }) {
   const { t: { access: a }, user } = useApp();
+  const patientAccess = usePatientAccess();
   const fmt = useFmtDate(); const name = useName(); const formId = useId();
   const [data, setData] = useState<Awaited<ReturnType<typeof loadAccessibility>> | null>(null);
   const [own, setOwn] = useState<Awaited<ReturnType<typeof loadPersonal>>>(null);
@@ -72,7 +74,7 @@ export function AccessibilityPanel({ patientId, personal = false }: { patientId:
   const canEdit = personal ? user?.role === "patient" && user.patientId === patientId : data?.canEdit === true;
   async function submit() {
     setBusy(true); setNotice(null);
-    try { if (personal) await savePersonal(patientId, personalForm, own?.revision ?? 0); else await saveAccessibility(patientId, draft, data?.profile?.revision ?? 0); await reload(); setNotice("saved"); }
+    try { if (personal) { await savePersonal(patientId, personalForm, own?.revision ?? 0); await patientAccess.reload(); } else await saveAccessibility(patientId, draft, data?.profile?.revision ?? 0); await reload(); setNotice("saved"); }
     catch (e) { setNotice(e instanceof Error && e.message === "conflict" ? "conflict" : "error"); }
     finally { setBusy(false); }
   }

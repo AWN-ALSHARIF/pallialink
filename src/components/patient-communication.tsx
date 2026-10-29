@@ -34,7 +34,7 @@ export function ReadAloud() {
   return <div><Button variant="outline" className="min-h-12" onClick={() => void read()}>{reading ? <Square /> : <Volume2 />}{reading ? a.stopReading : a.readAloud}</Button><p role="status" className="mt-2 text-sm">{notice}</p></div>;
 }
 export function PatientCommunication() {
-  const { user, t, lang } = useApp();
+  const { user, t } = useApp();
   const { draft, loading, failed, reload } = usePatientAccess();
   const features = patientFeatures(draft); const a = t.access;
   const [selected, setSelected] = useState<Request | null>(null);
@@ -52,10 +52,9 @@ export function PatientCommunication() {
     } catch { setError(true); } finally { setBusy(false); }
   }
   if (user?.role !== "patient") return null;
-  return <section className="mt-6 space-y-4" aria-labelledby={titleId}>
+  return <section className="mt-6 space-y-4" aria-label={a.boardTitle}>
     {loading && <p role="status">{a.loading}</p>}
     {failed && <div role="alert"><p>{a.portalLoadError}</p><Button variant="outline" onClick={() => void reload()}>{a.retry}</Button></div>}
-    {features.tts && <ReadAloud />}
     {features.voice && <Button asChild variant="outline" className="min-h-14"><Link to="/report"><Mic />{a.voiceLink}</Link></Button>}
     {features.pictures && <><h2 id={titleId} className="text-xl font-bold text-navy">{a.boardTitle}</h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{(Object.keys(icons) as Request[]).map((key) => { const Icon = icons[key]; return <Button key={key} variant="outline" aria-pressed={selected === key} disabled={busy} className="h-auto min-h-32 flex-col whitespace-normal p-4 text-base" onClick={() => { setResult(null); setError(false); setPain(null); setSelected(key); }}><Icon aria-hidden="true" className="size-10 text-primary" strokeWidth={1.8} /><span>{a.pictograms[key]}</span></Button>; })}</div>
