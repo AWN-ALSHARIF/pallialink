@@ -1,3 +1,4 @@
+import type React from "react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { currentPersonaId, refreshIfStale, signInAs, signOut, subscribe, userById, type User } from "./store";
 import { dict, type Lang } from "./i18n";
@@ -10,7 +11,9 @@ interface Ctx {
   setUserId: (id: string | null) => Promise<void>;
   ready: boolean;
 }
-const AppCtx = createContext<Ctx | null>(null);
+// Keep one context instance across hot reloads; a re-created context orphans the mounted provider.
+const g = globalThis as { __pallialinkAppCtx?: React.Context<Ctx | null> };
+const AppCtx = (g.__pallialinkAppCtx ??= createContext<Ctx | null>(null));
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("ar");
