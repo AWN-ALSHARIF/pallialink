@@ -16,7 +16,7 @@ type Tab = "overview" | "staff" | "patients" | "perms" | "analytics" | "audit";
 const TABS: Tab[] = ["overview", "staff", "patients", "perms", "analytics", "audit"];
 
 export const Route = createFileRoute("/admin")({
-  validateSearch: (s: Record<string, unknown>): { tab: Tab } => ({ tab: TABS.includes(s.tab as Tab) ? (s.tab as Tab) : "overview" }),
+  validateSearch: (s: Record<string, unknown>): { tab: Tab } => ({ tab: TABS.includes(s['tab'] as Tab) ? (s['tab'] as Tab) : "overview" }),
   head: () => ({
     meta: [
       { title: "Organization Command Center | PalliaLink" },
