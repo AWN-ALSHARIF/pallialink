@@ -15,6 +15,9 @@ const ar = {
   disclaimer: "نموذج تجريبي ببيانات وهمية فقط. ليس خدمة طوارئ ولا يقدم تشخيصاً أو توصيات علاجية. في الحالات الطارئة اتصل بـ 997.",
   chooseRole: "اختر حساباً تجريبياً",
   chooseRoleSub: "جميع الحسابات والبيانات وهمية لأغراض العرض.",
+  loginGroups: { patient: "المرضى", caregiver: "المرافق", nurse: "فريق التمريض", physician: "الأطباء", admin: "مدير المنظمة" },
+  signingIn: "جارٍ تسجيل الدخول…",
+  signInError: "تعذر تسجيل الدخول. حاول مرة أخرى.",
   roles: { patient: "مريض", caregiver: "مرافق مفوّض", nurse: "ممرض/ة", physician: "طبيب", admin: "مدير المنظمة" },
   roleDesc: {
     patient: "الإبلاغ عن الأعراض ومتابعة الحالة",
@@ -230,6 +233,9 @@ const en: Dict = {
   disclaimer: "Prototype with fictional data only. Not an emergency service and provides no diagnosis or treatment advice. In an emergency call 997.",
   chooseRole: "Choose a demo account",
   chooseRoleSub: "All accounts and data are fictional, for demonstration only.",
+  loginGroups: { patient: "Patients", caregiver: "Caregiver", nurse: "Nursing team", physician: "Physicians", admin: "Organization administrator" },
+  signingIn: "Signing in…",
+  signInError: "Unable to sign in. Please try again.",
   roles: { patient: "Patient", caregiver: "Authorized caregiver", nurse: "Nurse", physician: "Physician", admin: "Organization admin" },
   roleDesc: {
     patient: "Report symptoms and track status",

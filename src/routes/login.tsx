@@ -1,8 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { HeartHandshake, Stethoscope, User, UserCog, Users } from "lucide-react";
+import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Disclaimer, LangButton, Logo } from "@/components/shell";
 import { useApp, useName } from "@/lib/app";
-import { isClinical, USERS, type Role } from "@/lib/store";
+import { isClinical, type Role } from "@/lib/store";
+import { demoAccountGroups } from "@/lib/demo-accounts";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -24,31 +27,59 @@ function Login() {
   const { t, setUserId } = useApp();
   const name = useName();
   const navigate = useNavigate();
+  const [pending, setPending] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const signingIn = useRef(false);
+  const groups = demoAccountGroups();
+  const signIn = async (id: string, role: Role) => {
+    if (signingIn.current) return;
+    signingIn.current = true;
+    setPending(id);
+    setFailed(false);
+    try {
+      await setUserId(id);
+      await navigate({ to: isClinical(role) ? "/clinic" : "/patient" });
+    } catch { setFailed(true); }
+    finally { signingIn.current = false; setPending(null); }
+  };
   return (
     <div className="min-h-screen bg-hero">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-5">
         <Logo />
         <LangButton />
       </header>
-      <main className="mx-auto max-w-5xl px-4 pb-16 pt-6">
-        <h1 className="text-3xl font-bold text-navy">{t.chooseRole}</h1>
+      <main className="mx-auto max-w-5xl px-4 pb-10 pt-2 sm:pb-16 sm:pt-6">
+        <h1 className="text-2xl font-bold text-navy sm:text-3xl">{t.chooseRole}</h1>
         <p className="mt-2 text-muted-foreground">{t.chooseRoleSub}</p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {USERS.map((u) => {
+        {failed && <p role="alert" className="mt-3 text-sm text-destructive">{t.signInError}</p>}
+        <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
+          {groups.map(({ role, users }) => (
+            <section key={role} aria-labelledby={`group-${role}`}>
+              <h2 id={`group-${role}`} className="mb-2 text-sm font-bold text-navy sm:mb-3 sm:text-base">{t.loginGroups[role]}</h2>
+              <div className="grid gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          {users.map((u) => {
             const Icon = icons[u.role];
             return (
-              <button
+              <Button
                 key={u.id}
-                onClick={async () => { await setUserId(u.id); navigate({ to: isClinical(u.role) ? "/clinic" : "/patient" }); }}
-                className="card group p-6 text-start transition hover:-translate-y-0.5 hover:border-primary"
+                variant="outline"
+                disabled={pending !== null}
+                aria-busy={pending === u.id}
+                onClick={() => { void signIn(u.id, u.role); }}
+                className="card group grid h-auto min-h-24 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 whitespace-normal rounded-lg p-3 text-start transition-colors hover:border-primary sm:min-h-48 sm:grid-cols-1 sm:content-start sm:gap-0 sm:p-6 [&_svg]:size-5 sm:[&_svg]:size-6"
               >
-                <span className="grid size-12 place-items-center rounded-xl bg-accent text-primary group-hover:bg-primary group-hover:text-primary-foreground"><Icon className="size-6" /></span>
-                <div className="mt-4 text-sm font-semibold text-primary">{t.roles[u.role]}</div>
-                <div className="mt-1 text-lg font-bold text-navy">{name(u)}</div>
-                <p className="mt-2 text-sm text-muted-foreground">{t.roleDesc[u.role]}</p>
-              </button>
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent text-primary group-hover:bg-primary group-hover:text-primary-foreground sm:size-12"><Icon /></span>
+                <span className="block min-w-0 sm:mt-4">
+                  <span className="block text-xs font-semibold text-primary sm:text-sm">{t.roles[u.role]}</span>
+                  <span className="mt-0.5 block text-base font-bold text-navy sm:mt-1 sm:text-lg">{name(u)}</span>
+                  <span className="mt-1 block text-xs font-normal leading-5 text-muted-foreground sm:mt-2 sm:text-sm">{pending === u.id ? t.signingIn : t.roleDesc[u.role]}</span>
+                </span>
+              </Button>
             );
           })}
+              </div>
+            </section>
+          ))}
         </div>
         <Disclaimer className="mt-10" />
       </main>
