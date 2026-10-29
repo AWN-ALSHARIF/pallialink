@@ -1,6 +1,8 @@
+import { accessibilityAr, accessibilityEn } from "./accessibility-i18n";
 export type Lang = "ar" | "en";
 
 const ar = {
+  access: accessibilityAr,
   brand: "باليا لينك",
   tagline: "لأن الرعاية لا تتوقف",
   langSwitch: "English",
@@ -205,12 +207,13 @@ const ar = {
     selectStaff: "اختر عضواً من الفريق", mandatory: "صلاحيات إلزامية للدور (غير قابلة للتعديل)", optional: "صلاحيات اختيارية مفوّضة", confirmPerm: "تأكيد تغيير الصلاحيات؟", history: "سجل تغييرات الصلاحيات",
     effective: "الصلاحيات الفعلية", inactiveNote: "الحساب موقوف — لا تسري أي صلاحية حتى إعادة التفعيل.",
     perm: {
+      manage_patient_accessibility: "إدارة إمكانية الوصول والتواصل للمريض",
       approve_closure: "اعتماد إغلاق البلاغ سريرياً", reassign_reports: "إعادة إسناد البلاغات ضمن فريق الرعاية",
       phys_ack: "استلام البلاغات المسندة", phys_assessment: "توثيق التقييم وخطة المتابعة", phys_return: "إعادة البلاغ للتمريض", phys_tasks: "إنشاء طلبات تقييم تمريضي", phys_review: "مراجعة نتائج التقييم التمريضي", phys_followups: "إدارة متابعات المرضى المصرّح بهم",
       nurse_ack: "استلام البلاغات", nurse_obs: "توثيق الملاحظات التمريضية", nurse_escalate: "التصعيد لطبيب مؤهل", nurse_tasks: "إدارة المهام التمريضية المسندة", nurse_assess: "إكمال التقييمات وطلب مراجعة الطبيب",
     } as Record<string, string>,
     actor: "المنفّذ", action: "الإجراء", target: "المتأثر", change: "التغيير", time: "الوقت", noAudit: "لا توجد أحداث بعد.",
-    act: { permission_grant: "منح صلاحية", permission_revoke: "سحب صلاحية", staff_activate: "تفعيل حساب", staff_deactivate: "إيقاف حساب", care_team_change: "تعديل فريق رعاية", report_reassign: "إعادة إسناد بلاغ", task_reassign: "إعادة إسناد مهمة", closure_approved: "اعتماد إغلاق بلاغ" } as Record<string, string>,
+    act: { accessibility_profile_update: "تحديث ملف إمكانية الوصول", patient_interface_update: "تحديث تفضيلات المريض", permission_grant: "منح صلاحية", permission_revoke: "سحب صلاحية", staff_activate: "تفعيل حساب", staff_deactivate: "إيقاف حساب", care_team_change: "تعديل فريق رعاية", report_reassign: "إعادة إسناد بلاغ", task_reassign: "إعادة إسناد مهمة", closure_approved: "اعتماد إغلاق بلاغ" } as Record<string, string>,
     search: "بحث…", openCommand: "مركز القيادة",
   },
   footer: "© 2026 باليا لينك — نموذج أولي للهاكاثون",
@@ -219,6 +222,7 @@ const ar = {
 type Dict = typeof ar;
 
 const en: Dict = {
+  access: accessibilityEn,
   brand: "PalliaLink",
   tagline: "Because Care Never Stops",
   langSwitch: "العربية",
@@ -423,12 +427,13 @@ const en: Dict = {
     selectStaff: "Select a staff member", mandatory: "Mandatory role permissions (locked)", optional: "Optional delegated permissions", confirmPerm: "Confirm permission change?", history: "Permission change history",
     effective: "Effective permissions", inactiveNote: "Account deactivated — no permission applies until reactivated.",
     perm: {
+      manage_patient_accessibility: "Manage patient accessibility & communication",
       approve_closure: "Approve clinical report closure", reassign_reports: "Reassign reports within the care team",
       phys_ack: "Acknowledge assigned reports", phys_assessment: "Document assessment & follow-up plan", phys_return: "Return reports to nursing", phys_tasks: "Create nursing assessment requests", phys_review: "Review nursing assessment results", phys_followups: "Manage authorized patient follow-ups",
       nurse_ack: "Acknowledge reports", nurse_obs: "Document nursing observations", nurse_escalate: "Escalate to eligible physicians", nurse_tasks: "Manage assigned nursing tasks", nurse_assess: "Complete assessments & request physician review",
     } as Record<string, string>,
     actor: "Actor", action: "Action", target: "Affected", change: "Change", time: "Time", noAudit: "No events yet.",
-    act: { permission_grant: "Permission granted", permission_revoke: "Permission revoked", staff_activate: "Account activated", staff_deactivate: "Account deactivated", care_team_change: "Care team changed", report_reassign: "Report reassigned", task_reassign: "Task reassigned", closure_approved: "Closure approved" } as Record<string, string>,
+    act: { accessibility_profile_update: "Accessibility profile updated", patient_interface_update: "Patient preferences updated", permission_grant: "Permission granted", permission_revoke: "Permission revoked", staff_activate: "Account activated", staff_deactivate: "Account deactivated", care_team_change: "Care team changed", report_reassign: "Report reassigned", task_reassign: "Task reassigned", closure_approved: "Closure approved" } as Record<string, string>,
     search: "Search…", openCommand: "Command Center",
   },
   footer: "© 2026 PalliaLink — hackathon prototype",

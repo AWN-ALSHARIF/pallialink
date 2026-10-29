@@ -10,6 +10,8 @@
 <!-- LOVABLE:END -->
 
 ## Project rules
+- Access+ uses separate staff support and patient-choice tables through src/lib/accessibility.ts checked RPCs; require explicit dedicated permission and current same-org care-team scope for staff edits, and never cache sensitive preferences offline. Why: preserve clinical records and isolate patient self-service from staff authority.
+- Accessibility copy is composed into the central i18n dictionary from accessibility-i18n.ts. Why: keep one translation entry point while containing the feature vocabulary.
 - Reports live in the Cloud database; UI only calls `src/lib/store.ts`, whose in-memory cache is a read-only mirror refreshed after each write (never write whole datasets back — that caused stale-tab overwrites).
 - All report writes go through security-definer DB functions (`submit_report`, `report_action`) that re-check role/assignment/status; tables grant authenticated SELECT only, gated by RLS `can_view_patient`. Demo personas are real auth accounts via `demoSignIn` server fn.
 - All UI copy goes through `src/lib/i18n.ts` (Arabic default, RTL); never hardcode strings in components.

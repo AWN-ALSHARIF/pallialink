@@ -1,11 +1,11 @@
 // Organization administration. Every call is re-checked in the database (active admin, same org).
 async function sb() { return (await import("@/integrations/supabase/client")).supabase; }
 
-export type OptionalPermission = "approve_closure" | "reassign_reports";
+export type OptionalPermission = "approve_closure" | "reassign_reports" | "manage_patient_accessibility";
 /** Optional delegated permissions per role. Nurses can never receive physician-only privileges. */
 export const OPTIONAL_PERMISSIONS: Record<"nurse" | "physician", OptionalPermission[]> = {
-  physician: ["approve_closure", "reassign_reports"],
-  nurse: ["reassign_reports"],
+  physician: ["approve_closure", "reassign_reports", "manage_patient_accessibility"],
+  nurse: ["reassign_reports", "manage_patient_accessibility"],
 };
 export const MANDATORY_PERMISSIONS = {
   physician: ["phys_ack", "phys_assessment", "phys_return", "phys_tasks", "phys_review", "phys_followups"],
