@@ -6,7 +6,7 @@
 - [x] Group and compact demo login cards; verify phone/tablet/desktop layouts
 - [x] Measure navigation requests and implement safe performance/reliability improvements
 - [x] Verify synthetic report/task lifecycle, refresh, notifications, direct denial and Chromium voice; document evidence and limitations
-- [ ] Apply Taleen's three-patient organization/team correction and verify her workflow — awaiting explicit SQL approval
+- [x] Apply Taleen's three-patient organization/team correction and verify her workflow (approved and applied)
 - [ ] Verify real iOS Safari voice capture/playback — requires physical-device Safari access
 - [ ] Measure production bundle and public navigation — published URL redirected test browser to access bridge
 - [ ] Review task-action current care-team/org checks, runtime demo-org guard and report notifications — requires complete SQL review and explicit approval before database changes
