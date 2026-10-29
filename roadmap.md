@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Access+ Phase 1: inspect architecture and present complete SQL and implementation plan for approval
+- [x] Access+ Phase 1: inspect architecture and prepare complete SQL and implementation plan for approval
 - [ ] Access+ Phase 1: approved persistence, scoped permission management, patient self-service and profile interfaces — awaiting explicit SQL approval
 - [ ] Access+ Phase 1: verify authorization, audit, persistence and preserved clinical workflows — depends on approved implementation
 - [x] Phase 1: security, organizations, separate acknowledgments, both physicians assignable
