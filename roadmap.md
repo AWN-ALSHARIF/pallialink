@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Activate patient accessibility preferences, visual communication, voice/read-aloud and accessible navigation; verify real saved settings and authorized request delivery without schema changes
 - [x] Access+ Phase 1: inspect architecture and prepare complete SQL and implementation plan for approval
 - [x] Access+ Phase 1: approved persistence, scoped permission management, patient self-service and profile interfaces
 - [x] Access+ Phase 1: approved least-privilege correction; effective grants, anonymous/direct-write denials, scoped saves, persistence and audit verified; 35 tests passed
