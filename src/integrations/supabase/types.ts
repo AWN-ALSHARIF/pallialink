@@ -496,6 +496,156 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_accessibility_history: {
+        Row: {
+          actor_id: string
+          at: string
+          id: number
+          new_value: Json
+          old_value: Json | null
+          patient_id: string
+          source: string
+        }
+        Insert: {
+          actor_id: string
+          at?: string
+          id?: never
+          new_value: Json
+          old_value?: Json | null
+          patient_id: string
+          source: string
+        }
+        Update: {
+          actor_id?: string
+          at?: string
+          id?: never
+          new_value?: Json
+          old_value?: Json | null
+          patient_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_accessibility_history_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+          {
+            foreignKeyName: "patient_accessibility_history_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_accessibility_profiles: {
+        Row: {
+          communication_methods: string[]
+          needs: string[]
+          next_review_date: string | null
+          other_need: string | null
+          patient_id: string
+          primary_method: string | null
+          review_status: string
+          revision: number
+          staff_interface_preferences: Json
+          support_notes: string | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          communication_methods?: string[]
+          needs?: string[]
+          next_review_date?: string | null
+          other_need?: string | null
+          patient_id: string
+          primary_method?: string | null
+          review_status?: string
+          revision?: number
+          staff_interface_preferences?: Json
+          support_notes?: string | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          communication_methods?: string[]
+          needs?: string[]
+          next_review_date?: string | null
+          other_need?: string | null
+          patient_id?: string
+          primary_method?: string | null
+          review_status?: string
+          revision?: number
+          staff_interface_preferences?: Json
+          support_notes?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_accessibility_profiles_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_accessibility_profiles_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+        ]
+      }
+      patient_interface_preferences: {
+        Row: {
+          communication_methods: string[]
+          patient_id: string
+          preferences: Json
+          primary_method: string | null
+          revision: number
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          communication_methods?: string[]
+          patient_id: string
+          preferences?: Json
+          primary_method?: string | null
+          revision?: number
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          communication_methods?: string[]
+          patient_id?: string
+          preferences?: Json
+          primary_method?: string | null
+          revision?: number
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_interface_preferences_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_interface_preferences_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["persona_id"]
+          },
+        ]
+      }
       patient_profiles: {
         Row: {
           care_status: string | null
@@ -908,6 +1058,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      accessibility_patient_scope: {
+        Args: { p_patient: string }
+        Returns: boolean
+      }
+      accessibility_staff_scope: {
+        Args: { p_patient: string }
+        Returns: boolean
+      }
+      accessibility_valid_interface: {
+        Args: { p_patient_controlled: boolean; p_value: Json }
+        Returns: boolean
+      }
       admin_list_open_tasks: {
         Args: never
         Returns: {
@@ -967,6 +1129,10 @@ export type Database = {
       admin_set_staff_active: {
         Args: { p_active: boolean; p_persona: string }
         Returns: undefined
+      }
+      can_manage_patient_accessibility: {
+        Args: { p_patient: string }
+        Returns: boolean
       }
       can_view_patient: { Args: { p: string }; Returns: boolean }
       can_view_report: { Args: { p_report: string }; Returns: boolean }
@@ -1095,6 +1261,24 @@ export type Database = {
         Returns: undefined
       }
       reset_demo: { Args: never; Returns: undefined }
+      save_patient_accessibility: {
+        Args: {
+          p_expected_revision: number
+          p_patient: string
+          p_profile: Json
+        }
+        Returns: number
+      }
+      save_patient_interface_preferences: {
+        Args: {
+          p_expected_revision: number
+          p_methods: string[]
+          p_patient: string
+          p_preferences: Json
+          p_primary: string
+        }
+        Returns: number
+      }
       seed_demo: { Args: never; Returns: undefined }
       submit_report: {
         Args: {
