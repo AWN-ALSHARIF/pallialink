@@ -2,6 +2,7 @@
 // Reads go through database row-level rules; writes only through checked database functions
 // that re-verify role, active status, organization and care-team membership.
 import { patientById, type User } from "./store";
+import { clinicalReadCache } from "./session-cache";
 
 export type TaskCategory =
   | "pain_assessment" | "vital_signs" | "symptom_assessment" | "med_adherence"
@@ -33,6 +34,13 @@ export interface AppNotification {
 }
 
 async function sb() { return (await import("@/integrations/supabase/client")).supabase; }
+async function cachedRead<T>(resource: string, load: () => Promise<T>): Promise<T> {
+  const supabase = await sb();
+  const { data } = await supabase.auth.getSession();
+  const identity = data.session?.user.id;
+  if (!identity) { clinicalReadCache.clear(); throw new Error("forbidden"); }
+  return clinicalReadCache.read(identity, resource, load);
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapTask = (r: any): NursingTask => ({
@@ -50,16 +58,20 @@ const mapFollowUp = (r: any): FollowUp => ({
 
 /** All tasks the caller may see (database rules scope to the caller's care teams). */
 export async function listTasks(): Promise<NursingTask[]> {
+  return cachedRead("tasks", async () => {
   const supabase = await sb();
   const { data, error } = await supabase.from("nursing_tasks").select("*").order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(mapTask);
+  });
 }
 export async function listFollowUps(): Promise<FollowUp[]> {
+  return cachedRead("follow-ups", async () => {
   const supabase = await sb();
   const { data, error } = await supabase.from("follow_ups").select("*").order("target_date");
   if (error) throw error;
   return (data ?? []).map(mapFollowUp);
+  });
 }
 
 export async function createTask(
@@ -73,6 +85,7 @@ export async function createTask(
     p_due_at: (dueAt ?? null) as unknown as string, // null = no target time
   });
   if (error || !data) throw new Error("forbidden");
+  clinicalReadCache.clear();
   return data;
 }
 export async function taskAction(id: string, action: TaskAction, note?: string) {
@@ -81,6 +94,7 @@ export async function taskAction(id: string, action: TaskAction, note?: string) 
     p_id: id, p_action: action, ...(note?.trim() ? { p_note: note.trim() } : {}),
   });
   if (error) throw new Error("forbidden");
+  clinicalReadCache.clear();
 }
 export async function createFollowup(patientId: string, purpose: string, responsibleId: string, targetDate: string) {
   const supabase = await sb();
@@ -88,6 +102,7 @@ export async function createFollowup(patientId: string, purpose: string, respons
     p_patient: patientId, p_purpose: purpose, p_responsible: responsibleId, p_target_date: targetDate,
   });
   if (error) throw new Error("forbidden");
+  clinicalReadCache.clear();
 }
 export async function updateFollowup(id: number, status: "done" | "cancelled", notes?: string) {
   const supabase = await sb();
@@ -95,6 +110,7 @@ export async function updateFollowup(id: number, status: "done" | "cancelled", n
     p_id: id, p_status: status, ...(notes?.trim() ? { p_notes: notes.trim() } : {}),
   });
   if (error) throw new Error("forbidden");
+  clinicalReadCache.clear();
 }
 /** Eligible nurses for a new task: active, same org, on the patient's care team (server-checked). */
 export async function listCareTeamNurses(patientId: string): Promise<{ id: string; nameAr: string; nameEn: string }[]> {
@@ -104,6 +120,7 @@ export async function listCareTeamNurses(patientId: string): Promise<{ id: strin
   return (data ?? []).map((d) => ({ id: d.persona_id, nameAr: d.name_ar, nameEn: d.name_en }));
 }
 export async function listNotifications(): Promise<AppNotification[]> {
+  return cachedRead("notifications", async () => {
   const supabase = await sb();
   const { data, error } = await supabase.rpc("list_notifications");
   if (error) throw error;
@@ -112,11 +129,14 @@ export async function listNotifications(): Promise<AppNotification[]> {
     id: r.id, userId: r.user_id, patientId: r.patient_id, kind: r.kind, refId: r.ref_id,
     createdAt: r.created_at, readAt: r.read_at,
   }));
+  });
 }
 export async function markNotificationsRead(ids: number[]) {
   if (!ids.length) return;
   const supabase = await sb();
-  await supabase.rpc("mark_notifications_read", { p_ids: ids });
+  const { error } = await supabase.rpc("mark_notifications_read", { p_ids: ids });
+  if (error) throw error;
+  clinicalReadCache.clear();
 }
 
 // ---- Permission mirrors (the database re-checks every write) ----

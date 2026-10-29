@@ -1,5 +1,6 @@
 // Data layer backed by the Lovable Cloud database. Synthetic demo data only.
 // UI depends only on these functions.
+import { clinicalReadCache } from "./session-cache";
 
 export type Role = "patient" | "caregiver" | "nurse" | "physician" | "admin";
 export type Status = "submitted" | "acknowledged" | "awaiting_physician" | "under_review" | "follow_up" | "returned_to_nursing" | "nursing_follow_up" | "closed";
@@ -93,9 +94,10 @@ async function sb() { return (await import("@/integrations/supabase/client")).su
 
 let inflight: Promise<void> | null = null;
 let lastRefresh = 0;
+let cachedPersonaId: string | null = null;
 /** Reload from the database; concurrent calls share one request. */
 export function refresh(): Promise<void> {
-  if (!inflight) inflight = doRefresh().finally(() => { inflight = null; lastRefresh = Date.now(); });
+  if (!inflight) inflight = doRefresh().then(() => { lastRefresh = Date.now(); }).finally(() => { inflight = null; });
   return inflight;
 }
 /** Focus-triggered reload, skipped if data is fresher than 15 s. */
@@ -103,14 +105,15 @@ export function refreshIfStale() { return Date.now() - lastRefresh < 15000 ? Pro
 async function doRefresh() {
   const supabase = await sb();
   const { data: sess } = await supabase.auth.getSession();
-  if (!sess.session) { cache = { reports: [], seq: 0 }; notify(); return; }
-  const [{ data: reps, error: e1 }, { data: acts, error: e2 }, { data: me }, { data: pats }] = await Promise.all([
+  if (!sess.session) { cachedPersonaId = null; cache = { reports: [], seq: 0 }; notify(); return; }
+  const [{ data: reps, error: e1 }, { data: acts, error: e2 }, { data: me, error: e3 }, { data: pats, error: e4 }] = await Promise.all([
     supabase.from("reports").select("*"),
     supabase.from("report_activity").select("*").order("id"),
     supabase.from("app_users").select("persona_id, can_approve_closure").eq("auth_id", sess.session.user.id).maybeSingle(),
     supabase.from("patients").select("id, care_team"),
   ]);
-  if (e1 || e2) throw e1 ?? e2;
+  if (e1 || e2 || e3 || e4) throw e1 ?? e2 ?? e3 ?? e4;
+  cachedPersonaId = me?.persona_id ?? null;
   // Admin-configurable values: mirror the live database so revocations / care-team changes show immediately.
   const meUser = userById(me?.persona_id);
   if (meUser) meUser.canApproveClosure = !!me?.can_approve_closure;
@@ -145,6 +148,12 @@ export async function resetDemo() {
 
 /** Sign in as a demo persona (real backend account) and return its persona id. */
 export async function signInAs(personaId: string) {
+  if (inflight) await inflight.catch(() => {});
+  clinicalReadCache.clear();
+  cache = { reports: [], seq: 0 };
+  cachedPersonaId = null;
+  lastRefresh = 0;
+  notify();
   const { demoSignIn } = await import("./demo-auth.functions");
   const tokens = await demoSignIn({ data: { personaId } });
   const supabase = await sb();
@@ -153,6 +162,10 @@ export async function signInAs(personaId: string) {
   await refresh();
 }
 export async function signOut() {
+  if (inflight) await inflight.catch(() => {});
+  clinicalReadCache.clear();
+  cachedPersonaId = null;
+  lastRefresh = 0;
   const supabase = await sb();
   await supabase.auth.signOut();
   cache = { reports: [], seq: 0 };
@@ -160,13 +173,9 @@ export async function signOut() {
 }
 /** Persona of the current backend session, if any. */
 export async function currentPersonaId(): Promise<string | null> {
-  const supabase = await sb();
-  // Local session read (no network); the database re-validates the token on every query.
-  const { data } = await supabase.auth.getSession();
-  const uid = data.session?.user.id;
-  if (!uid) return null;
-  const { data: row } = await supabase.from("app_users").select("persona_id").eq("auth_id", uid).maybeSingle();
-  return row?.persona_id ?? null;
+  // Resolve identity and its authorized data in the same parallel read, not two waterfalls.
+  await refresh();
+  return cachedPersonaId;
 }
 
 // ---- Access control (enforced inside every store function, not just in the UI) ----
@@ -248,7 +257,9 @@ export async function submitReport(user: User, input: { pain: number; symptoms: 
   const { data, error } = await supabase.rpc("submit_report", { p_pain: input.pain, p_symptoms: input.symptoms, p_notes: input.notes, ...audio });
   if (error || !data) throw new Error("forbidden");
   await refresh();
-  return cache.reports.find((r) => r.id === data)!;
+  const report = cache.reports.find((r) => r.id === data);
+  if (!report) throw new Error("report unavailable");
+  return report;
 }
 export const returnAcknowledge = (_u: User, id: string) => rpcAction(id, "returnAck");
 /** Eligible nurses for a return (assigned physician only): active, same org, on the care team. */

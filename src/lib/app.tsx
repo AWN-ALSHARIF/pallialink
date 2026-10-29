@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { currentPersonaId, refresh, refreshIfStale, signInAs, signOut, subscribe, userById, type User } from "./store";
+import { currentPersonaId, refreshIfStale, signInAs, signOut, subscribe, userById, type User } from "./store";
 import { dict, type Lang } from "./i18n";
 
 interface Ctx {
@@ -25,7 +25,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const id = await currentPersonaId();
         setUserIdState(id);
-        if (id) await refresh();
       } catch { setUserIdState(null); }
       setReady(true);
     })();
