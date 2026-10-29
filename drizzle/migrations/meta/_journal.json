@@ -99,6 +99,13 @@
       "when": 1793311494430,
       "tag": "0013_access_plus_phase1",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793315254830,
+      "tag": "0014_access_plus_least_privilege",
+      "breakpoints": true
     }
   ]
 }
