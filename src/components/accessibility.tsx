@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Accessibility, Check, Lock, Pencil, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApp, useFmtDate, useName } from "@/lib/app";
@@ -56,13 +56,17 @@ export function AccessibilityPanel({ patientId, personal = false }: { patientId:
   const [loading, setLoading] = useState(true); const [failed, setFailed] = useState(false);
   const [edit, setEdit] = useState(false); const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<"saved" | "error" | "conflict" | null>(null);
+  const generation = useRef(0);
+  const activeForm = useRef(false);
+  activeForm.current = edit || busy;
   const reload = useCallback(async () => {
+    const version = ++generation.current;
     setLoading(true); setFailed(false); setEdit(false); setData(null); setOwn(null);
-    try { if (personal) { const row = await loadPersonal(patientId); setOwn(row); setPersonalForm(personalDraft(row)); }
-      else { const loaded = await loadAccessibility(patientId); setData(loaded); setDraft(profileDraft(loaded.profile)); }
-    } catch { setFailed(true); } finally { setLoading(false); }
+    try { if (personal) { const row = await loadPersonal(patientId); if (version !== generation.current) return; setOwn(row); setPersonalForm(personalDraft(row)); }
+      else { const loaded = await loadAccessibility(patientId); if (version !== generation.current) return; setData(loaded); setDraft(profileDraft(loaded.profile)); }
+    } catch { if (version === generation.current) setFailed(true); } finally { if (version === generation.current) setLoading(false); }
   }, [patientId, personal, user?.id]);
-  useEffect(() => { let active = true; void reload(); const focus = () => { if (active && !edit && !busy) void reload(); }; window.addEventListener("focus", focus); return () => { active = false; window.removeEventListener("focus", focus); }; }, [reload, edit, busy]);
+  useEffect(() => { void reload(); const focus = () => { if (!activeForm.current) void reload(); }; window.addEventListener("focus", focus); return () => { generation.current++; window.removeEventListener("focus", focus); }; }, [reload]);
   // Clear on identity change; reject delayed session results by remounting this panel at its call sites.
   const row = personal ? own : data?.profile;
   const canEdit = personal ? user?.role === "patient" && user.patientId === patientId : data?.canEdit === true;
@@ -93,10 +97,4 @@ export function AccessibilityPanel({ patientId, personal = false }: { patientId:
         </div></>}
     </>}
   </section>;
-}
-
-export function AccessibilityStatusLink({ patientId }: { patientId: string }) {
-  // Status is rendered by admin using a single metadata-only list read, not one profile read per card.
-  const { t: { access: a } } = useApp();
-  return <span>{a.title}</span>;
 }

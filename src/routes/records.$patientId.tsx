@@ -5,6 +5,8 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { toast } from "sonner";
 import { AppShell, PainPill, StatusBadge } from "@/components/shell";
 import { NewFollowUpForm, NewTaskForm } from "@/components/tasks";
+import { AccessibilityPanel } from "@/components/accessibility";
+import { Button } from "@/components/ui/button";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { addEntry, loadRecord, openDocument, updateProfile, uploadDocument, WRITABLE, type Entry, type EntryKind, type Profile } from "@/lib/emr";
 import { useGuard } from "@/lib/guard";
@@ -12,6 +14,7 @@ import { listReports, userById, type User } from "@/lib/store";
 import { canCreateTask, listFollowUps, listTasks, type FollowUp, type NursingTask } from "@/lib/tasks";
 
 export const Route = createFileRoute("/records/$patientId")({
+  validateSearch: (s: Record<string, unknown>): { section?: "accessibility" } => ({ section: s['section'] === "accessibility" ? "accessibility" : undefined }),
   head: () => ({
     meta: [
       { title: "Patient medical record | PalliaLink" },
@@ -26,8 +29,8 @@ export const Route = createFileRoute("/records/$patientId")({
   component: RecordPage,
 });
 
-type Tab = "history" | "medications" | "allergies" | "investigations" | "notes" | "care" | "documents" | "reports" | "timeline";
-const TABS: Tab[] = ["history", "medications", "allergies", "investigations", "notes", "care", "documents", "reports", "timeline"];
+type Tab = "history" | "medications" | "allergies" | "investigations" | "notes" | "care" | "documents" | "reports" | "timeline" | "accessibility";
+const TABS: Tab[] = ["history", "accessibility", "medications", "allergies", "investigations", "notes", "care", "documents", "reports", "timeline"];
 const TAB_KINDS: Partial<Record<Tab, EntryKind[]>> = {
   medications: ["medication"], allergies: ["allergy"], investigations: ["lab", "vital"],
   notes: ["nursing_note", "physician_assessment", "encounter"], care: ["care_plan"], documents: ["document"],
@@ -36,10 +39,12 @@ type Rec = NonNullable<Awaited<ReturnType<typeof loadRecord>>>;
 
 function RecordPage() {
   const { patientId } = Route.useParams();
+  const { section } = Route.useSearch();
   const user = useGuard("clinic");
   const { t, lang } = useApp();
   const [rec, setRec] = useState<Rec | null | undefined>(undefined);
-  const [tab, setTab] = useState<Tab>("history");
+  const [tab, setTab] = useState<Tab>(section === "accessibility" ? "accessibility" : "history");
+  useEffect(() => { if (section === "accessibility") setTab("accessibility"); }, [section, patientId]);
   const [showTask, setShowTask] = useState(false);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const reload = useCallback(() => loadRecord(patientId).then(setRec, () => setRec(null)), [patientId]);
@@ -73,10 +78,11 @@ function RecordPage() {
       )}
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1" role="tablist">
         {TABS.map((k) => (
-          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`btn min-h-10 shrink-0 ${tab === k ? "btn-navy" : "btn-outline"}`}>{t.tabs[k]}</button>
+          <Button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} variant={tab === k ? "secondary" : "outline"} className="min-h-11 shrink-0">{k === "accessibility" ? t.access.title : t.tabs[k]}</Button>
         ))}
       </div>
       <div className="mt-4">
+        {tab === "accessibility" && <AccessibilityPanel key={`${user.id}:${patientId}`} patientId={patientId} />}
         {tab === "history" && <HistoryTab rec={rec} user={user} onSaved={reload} />}
         {tab === "reports" && <ReportsTab user={user} patientId={patientId} />}
         {tab === "timeline" && <TimelineTab rec={rec} user={user} />}

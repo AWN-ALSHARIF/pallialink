@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { AppShell, Disclaimer, PainPill, StatusBadge } from "@/components/shell";
+import { AccessibilityPanel } from "@/components/accessibility";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
 import { listReports, patientById, STATUSES, type Status } from "@/lib/store";
@@ -26,7 +27,7 @@ function PatientHome() {
   const fmt = useFmtDate();
   useStoreVersion();
   if (!user) return null;
-  const patient = patientById(user.patientId!);
+  const patient = user.patientId ? patientById(user.patientId) : undefined;
   const reports = listReports(user);
   const open = reports.filter((r) => r.status !== "closed").length;
 
@@ -73,6 +74,7 @@ function PatientHome() {
           </div>
         ))}
       </div>
+      {user.role === "patient" && user.patientId && <div className="mt-10 border-t"><AccessibilityPanel key={`${user.id}:${user.patientId}`} patientId={user.patientId} personal /></div>}
       <Disclaimer className="mt-10" />
     </AppShell>
   );

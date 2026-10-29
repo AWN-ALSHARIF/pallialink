@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { listAccessibilityStatus } from "@/lib/accessibility";
 import { Activity, BarChart3, Building2, KeyRound, Lock, ScrollText, Search, Users, UserRound } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -237,6 +239,7 @@ function PatientsTab() {
   const name = useName();
   const fmt = useFmtDate();
   const patients = useAsync(listPatients, []);
+  const accessibility = useAsync(listAccessibilityStatus, []);
   const staff = useAsync(listStaff, []);
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState<{ id: string; team: string[] } | null>(null);
@@ -265,6 +268,10 @@ function PatientsTab() {
                 <div><dt className="text-muted-foreground">{t.adm.lastUpdate}</dt><dd>{p.lastUpdate ? fmt(p.lastUpdate) : "—"}</dd></div>
                 <div><dt className="text-muted-foreground">{t.adm.nextFollowup}</dt><dd>{p.nextFollowup ?? "—"}</dd></div>
               </dl>
+              <div className="mt-4 flex flex-wrap items-center gap-3 border-t pt-3">
+                <Button asChild variant="outline" className="min-h-11 whitespace-normal text-start"><Link to="/records/$patientId" params={{ patientId: p.id }} search={{ section: "accessibility" }}>{t.access.title}</Link></Button>
+                <span className="text-xs text-muted-foreground">{accessibility.err ? t.access.unavailable : accessibility.data === null ? t.access.loading : accessibility.data.includes(p.id) ? t.access.configured : t.access.unconfigured}</span>
+              </div>
               {edit?.id === p.id && (
                 <div className="mt-3 rounded-xl border p-3">
                   <div className="mb-2 font-semibold">{t.adm.careTeam}</div>
