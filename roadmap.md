@@ -1,7 +1,7 @@
 # Roadmap
 - [x] Access+ Phase 1: inspect architecture and prepare complete SQL and implementation plan for approval
-- [ ] Access+ Phase 1: approved persistence, scoped permission management, patient self-service and profile interfaces — awaiting explicit SQL approval
-- [ ] Access+ Phase 1: verify authorization, audit, persistence and preserved clinical workflows — depends on approved implementation
+- [x] Access+ Phase 1: approved persistence, scoped permission management, patient self-service and profile interfaces
+- [ ] Access+ Phase 1: complete least-privilege verification — effective default grants need explicit approval for corrective SQL; scoped save/persistence/audit and 35 tests passed
 - [x] Phase 1: security, organizations, separate acknowledgments, both physicians assignable
 - [x] Return-to-nursing workflow (own states, required reason, separate return acknowledgment)
 - [x] Medical record (الملف الطبي): database, screens, demo records, test organization
