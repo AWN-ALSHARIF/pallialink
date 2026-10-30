@@ -7,6 +7,7 @@ import { AppShell, PainPill, StatusBadge } from "@/components/shell";
 import { NewFollowUpForm, NewTaskForm } from "@/components/tasks";
 import { AccessibilityPanel } from "@/components/accessibility";
 import { Button } from "@/components/ui/button";
+import { UnsavedChanges, useDiscardConfirmation } from "@/components/unsaved-changes";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { addEntry, loadRecord, openDocument, updateProfile, uploadDocument, WRITABLE, type Entry, type EntryKind, type Profile } from "@/lib/emr";
 import { useGuard } from "@/lib/guard";
@@ -47,6 +48,8 @@ function RecordPage() {
   useEffect(() => { if (section === "accessibility") setTab("accessibility"); }, [section, patientId]);
   const [showTask, setShowTask] = useState(false);
   const [showFollowUp, setShowFollowUp] = useState(false);
+  const [coordinationDirty, setCoordinationDirty] = useState(false);
+  const discard = useDiscardConfirmation();
   const reload = useCallback(() => loadRecord(patientId).then(setRec, () => setRec(null)), [patientId]);
   useEffect(() => { if (user) void reload(); }, [user, reload]);
   if (!user) return null;
@@ -58,22 +61,23 @@ function RecordPage() {
 
   return (
     <AppShell>
+      <UnsavedChanges dirty={false} discard={discard} />
       {back}
       <Summary rec={rec} />
       {mayCoordinate && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <button className="btn btn-primary min-h-10" onClick={() => { setShowTask(!showTask); setShowFollowUp(false); }}>
+          <button className="btn btn-primary min-h-10" onClick={() => discard.request(coordinationDirty, () => { setShowTask(!showTask); setShowFollowUp(false); })}>
             <ClipboardList className="size-4" /> {t.newTask}
           </button>
-          <button className="btn btn-outline min-h-10" onClick={() => { setShowFollowUp(!showFollowUp); setShowTask(false); }}>
+          <button className="btn btn-outline min-h-10" onClick={() => discard.request(coordinationDirty, () => { setShowFollowUp(!showFollowUp); setShowTask(false); })}>
             <CalendarPlus className="size-4" /> {t.newFollowUp}
           </button>
         </div>
       )}
       {mayCoordinate && (showTask || showFollowUp) && (
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          {showTask && <NewTaskForm patientId={patientId} onDone={() => { setShowTask(false); void reload(); }} />}
-          {showFollowUp && <NewFollowUpForm patientId={patientId} onDone={() => { setShowFollowUp(false); void reload(); }} />}
+          {showTask && <NewTaskForm patientId={patientId} onDirty={setCoordinationDirty} onDone={() => { setShowTask(false); void reload(); }} />}
+          {showFollowUp && <NewFollowUpForm patientId={patientId} onDirty={setCoordinationDirty} onDone={() => { setShowFollowUp(false); void reload(); }} />}
         </div>
       )}
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1" role="tablist">
@@ -152,8 +156,10 @@ function HistoryTab({ rec, user, onSaved }: { rec: Rec; user: User; onSaved: () 
   const fmt = useFmtDate();
   const [edit, setEdit] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
+  const discard = useDiscardConfirmation();
   const p = rec.profile;
   const str = (k: keyof Profile) => { const v = p?.[k]; return Array.isArray(v) ? v.join("، ") : (v as string | null) ?? ""; };
+  const dirty = edit && PROFILE_FIELDS.some((field) => (form[field.key] ?? "") !== str(field.key));
   const start = () => { setForm(Object.fromEntries(PROFILE_FIELDS.map((f) => [f.key, str(f.key)]))); setEdit(true); };
   const save = () => {
     const changed: Record<string, string | string[] | null> = {};
@@ -167,6 +173,7 @@ function HistoryTab({ rec, user, onSaved }: { rec: Rec; user: User; onSaved: () 
   };
   return (
     <section className="card p-6">
+      <UnsavedChanges dirty={dirty} discard={discard} />
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-bold text-navy">{t.tabs.history}</h2>
         {user.role === "physician" && !edit && <button className="btn btn-outline min-h-10" onClick={start}><Pencil className="size-4" /> {t.editProfile}</button>}
@@ -180,7 +187,7 @@ function HistoryTab({ rec, user, onSaved }: { rec: Rec; user: User; onSaved: () 
           ))}
           <div className="flex gap-2 md:col-span-2">
             <button className="btn btn-primary" onClick={save}>{t.saveProfile}</button>
-            <button className="btn btn-outline" onClick={() => setEdit(false)}>{t.cancel}</button>
+            <button className="btn btn-outline" onClick={() => discard.request(dirty, () => setEdit(false))}>{t.cancel}</button>
           </div>
         </div>
       ) : (
