@@ -1,21 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { listAccessibilityStatus } from "@/lib/accessibility";
-import { Activity, BarChart3, Building2, KeyRound, Lock, ScrollText, Search, Users, UserRound } from "lucide-react";
+import { Activity, BarChart3, Building2, Gauge, KeyRound, Lock, ScrollText, Search, Users, UserRound } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AppShell } from "@/components/shell";
+import { AppShell, StatusBadge } from "@/components/shell";
 import { useApp, useFmtDate, useName } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
 import {
-  canHoldPermission, getMetrics, listAudit, listOpenTasks, listPatients, listStaff, MANDATORY_PERMISSIONS, OPTIONAL_PERMISSIONS,
+  canHoldPermission, fmtElapsed, getMetrics, getOperationalMetrics, getPendingActions, listAudit, listOpenTasks, listPatients, listStaff,
+  MANDATORY_PERMISSIONS, noSample, OPTIONAL_PERMISSIONS,
   reassignTask, setCareTeam, setPermission, setStaffActive,
-  type AuditRow, type Metrics, type OpenTask, type OptionalPermission, type PatientRow, type Staff,
+  type AuditRow, type Metrics, type OpenTask, type OpsMetrics, type OptionalPermission, type PatientRow, type PendingActions, type Staff, type TimingStat,
 } from "@/lib/admin";
-import { userById } from "@/lib/store";
+import { userById, type Status } from "@/lib/store";
 
-type Tab = "overview" | "staff" | "patients" | "perms" | "analytics" | "audit";
-const TABS: Tab[] = ["overview", "staff", "patients", "perms", "analytics", "audit"];
+type Tab = "overview" | "staff" | "patients" | "perms" | "analytics" | "operations" | "audit";
+const TABS: Tab[] = ["overview", "staff", "patients", "perms", "analytics", "operations", "audit"];
 
 export const Route = createFileRoute("/admin")({
   validateSearch: (s: Record<string, unknown>): { tab: Tab } => ({ tab: TABS.includes(s['tab'] as Tab) ? (s['tab'] as Tab) : "overview" }),
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-const ICONS: Record<Tab, typeof Activity> = { overview: Building2, staff: Users, patients: UserRound, perms: KeyRound, analytics: BarChart3, audit: ScrollText };
+const ICONS: Record<Tab, typeof Activity> = { overview: Building2, staff: Users, patients: UserRound, perms: KeyRound, analytics: BarChart3, operations: Gauge, audit: ScrollText };
 
 function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
   const [data, setData] = useState<T | null>(null);
@@ -67,6 +68,7 @@ function AdminPage() {
         {tab === "patients" && <PatientsTab />}
         {tab === "perms" && <PermsTab />}
         {tab === "analytics" && <Analytics />}
+        {tab === "operations" && <Operations />}
         {tab === "audit" && <AuditTab />}
       </div>
     </AppShell>
