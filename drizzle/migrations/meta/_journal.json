@@ -113,6 +113,13 @@
       "when": 1793372350931,
       "tag": "0015_operational_analytics",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793372718120,
+      "tag": "0016_operational_analytics_trend_fix",
+      "breakpoints": true
     }
   ]
 }
