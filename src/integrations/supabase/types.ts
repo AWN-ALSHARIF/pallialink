@@ -1100,6 +1100,16 @@ export type Database = {
         Args: { p_bucket?: string; p_from: string; p_to: string }
         Returns: Json
       }
+      admin_operational_metrics: {
+        Args: {
+          p_bucket?: string
+          p_from: string
+          p_staff?: string
+          p_stall_hours?: number
+          p_to: string
+        }
+        Returns: Json
+      }
       admin_patient_overview: {
         Args: never
         Returns: {
@@ -1114,6 +1124,7 @@ export type Database = {
           patient_id: string
         }[]
       }
+      admin_pending_actions: { Args: never; Returns: Json }
       admin_reassign_task: {
         Args: { p_nurse: string; p_task: string }
         Returns: undefined
