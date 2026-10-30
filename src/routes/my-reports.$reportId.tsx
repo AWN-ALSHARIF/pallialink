@@ -26,7 +26,7 @@ function PatientReportDetails() {
     <h1 className="text-3xl font-bold text-navy">{t.navigation.myReports} <span dir="ltr" className="inline-block font-mono text-xl">{report.id}</span></h1>
     <p className="mt-4 font-semibold text-primary">{t.navigation.status[report.status]}</p>
     <dl className="mt-6 grid gap-4 border-y py-6 sm:grid-cols-2">
-      <div><dt className="text-sm text-muted-foreground">{t.reportDate}</dt><dd className="mt-1">{fmt(report.createdAt)}</dd></div>
+      <div><dt className="text-sm text-muted-foreground">{t.date}</dt><dd className="mt-1">{fmt(report.createdAt)}</dd></div>
       <div><dt className="text-sm text-muted-foreground">{t.navigation.lastUpdate}</dt><dd className="mt-1">{fmt(report.lastUpdate)}</dd></div>
       <div><dt className="text-sm text-muted-foreground">{t.painLevel}</dt><dd className="mt-1"><PainPill pain={report.pain} /></dd></div>
       <div><dt className="text-sm text-muted-foreground">{t.otherSymptoms}</dt><dd className="mt-1">{report.symptoms.map((s) => t.symptoms[s]).join("، ") || "—"}</dd></div>

@@ -79,7 +79,7 @@ function PatientHome() {
               <div className="font-semibold">{r.id}</div>
               <div className="text-sm text-muted-foreground">{fmt(r.createdAt)} · {r.symptoms.map((s) => t.symptoms[s]).join("، ") || "—"}</div>
             </div>
-            <Button asChild variant="ghost" className="min-h-12 whitespace-normal text-start"><Link to="/my-reports/$reportId" params={{ reportId: r.id }}>{t.navigation.status[r.status]}</Link></Button>
+            <Button asChild variant="ghost" className="min-h-12 whitespace-normal text-start"><Link to="/my-reports/$reportId" params={{ reportId: r.id }} search={{ filter: "all" }}>{t.navigation.status[r.status]}</Link></Button>
           </div>
         ))}
       </div>
