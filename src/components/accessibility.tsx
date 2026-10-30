@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Accessibility, Check, Lock, Pencil, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { UnsavedChanges } from "@/components/unsaved-changes";
+import { UnsavedChanges, useDiscardConfirmation } from "@/components/unsaved-changes";
 import { useApp, useFmtDate, useName } from "@/lib/app";
 import { userById } from "@/lib/store";
 import { usePatientAccess } from "@/lib/patient-access";
@@ -60,6 +60,8 @@ export function AccessibilityPanel({ patientId, personal = false }: { patientId:
   const [edit, setEdit] = useState(false); const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<"saved" | "error" | "conflict" | null>(null);
   const generation = useRef(0);
+  const discard = useDiscardConfirmation();
+  const dirty = edit && JSON.stringify(personal ? personalForm : draft) !== JSON.stringify(personal ? personalDraft(own) : profileDraft(data?.profile ?? null));
   const activeForm = useRef(false);
   activeForm.current = edit || busy;
   const reload = useCallback(async () => {
@@ -80,19 +82,19 @@ export function AccessibilityPanel({ patientId, personal = false }: { patientId:
     finally { setBusy(false); }
   }
   return <section className="min-w-0 py-5" aria-labelledby={formId}>
-    <UnsavedChanges dirty={edit && JSON.stringify(personal ? personalForm : draft) !== JSON.stringify(personal ? personalDraft(own) : profileDraft(data?.profile ?? null))} />
+    <UnsavedChanges dirty={dirty} discard={discard} />
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 id={formId} className="flex items-center gap-2 text-xl font-bold text-navy"><Accessibility className="size-5 shrink-0 text-primary" />{personal ? a.personalTitle : a.title}</h2>{!loading && !failed && !edit && canEdit && <Button variant="outline" className="min-h-11" onClick={() => { setNotice(null); setEdit(true); }}><Pencil />{a.edit}</Button>}</div>
     {loading ? <p className="mt-5 text-muted-foreground" role="status">{a.loading}</p> : failed ? <div className="mt-5"><p role="alert">{a.unavailable}</p><Button variant="outline" className="mt-3 min-h-11" onClick={() => void reload()}><RotateCcw />{a.retry}</Button></div> : <>
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground"><span className={row ? "font-semibold text-primary" : ""}>{row ? a.configured : a.unconfigured}</span>{row && <span>{a.updatedAt}: {fmt(row.updated_at)} · {a.updatedBy}: {name(userById(row.updated_by))}</span>}</div>
       {!canEdit && <p className="mt-3 flex items-start gap-2 text-sm text-muted-foreground"><Lock className="mt-0.5 size-4 shrink-0" />{a.readOnly}</p>}
       {notice && <p className={`mt-4 flex items-center gap-2 text-sm ${notice === "saved" ? "text-primary" : "text-destructive"}`} role={notice === "saved" ? "status" : "alert"}>{notice === "saved" && <Check className="size-4" />}{a[notice]}</p>}
-      {notice === "conflict" && <Button className="mt-3 min-h-11" variant="outline" onClick={() => { setNotice(null); void reload(); }}><RotateCcw />{a.reload}</Button>}
+      {notice === "conflict" && <Button className="mt-3 min-h-11" variant="outline" onClick={() => discard.request(dirty, () => { setNotice(null); void reload(); })}><RotateCcw />{a.reload}</Button>}
       {edit ? <form className="mt-5" onSubmit={(e) => { e.preventDefault(); void submit(); }}><fieldset disabled={busy || !canEdit || notice === "conflict"} className="min-w-0">
         {!personal && <Section title={a.needsTitle}><Choices values={ACCESSIBILITY_NEEDS} labels={a.needs} selected={draft.needs} onChange={(needs) => setDraft({ ...draft, needs, other_need: needs.includes("other") ? draft.other_need : null })} />{draft.needs.includes("other") && <label className="mt-4 block text-sm font-semibold">{a.otherDescription}<input className="field mt-2" maxLength={500} value={draft.other_need ?? ""} onChange={(e) => setDraft({ ...draft, other_need: e.target.value || null })} /></label>}</Section>}
         <Methods draft={personal ? personalForm : draft} onChange={(fields) => personal ? setPersonalForm({ ...personalForm, ...fields }) : setDraft({ ...draft, ...fields })} />
         <InterfaceFields personal={personal} value={personal ? personalForm.preferences : draft.interface_preferences} onChange={(value) => personal ? setPersonalForm({ ...personalForm, preferences: value }) : setDraft({ ...draft, interface_preferences: value })} />
         {!personal && <><Section title={a.notesTitle}><label className="block text-sm font-semibold">{a.supportNotes}<textarea className="field mt-2 font-normal" rows={3} maxLength={2000} value={draft.support_notes ?? ""} onChange={(e) => setDraft({ ...draft, support_notes: e.target.value || null })} /></label></Section><ReviewFields draft={draft} onChange={setDraft} /></>}
-      </fieldset><div className="mt-5 flex flex-wrap gap-3"><Button type="submit" className="min-h-12" disabled={busy || !canEdit || notice === "conflict"}><Save />{busy ? a.saving : a.save}</Button><Button type="button" variant="outline" className="min-h-12" disabled={busy} onClick={() => { setNotice(null); void reload(); }}>{a.cancel}</Button></div></form>
+      </fieldset><div className="mt-5 flex flex-wrap gap-3"><Button type="submit" className="min-h-12" disabled={busy || !canEdit || notice === "conflict"}><Save />{busy ? a.saving : a.save}</Button><Button type="button" variant="outline" className="min-h-12" disabled={busy} onClick={() => discard.request(dirty, () => { setNotice(null); void reload(); })}>{a.cancel}</Button></div></form>
         : <div className="mt-5"><PreferenceSummary draft={personal ? personalDraft(own) : profileDraft(data?.profile ?? null)} personal={personal} /></div>}
       {!personal && data && <>
         <div className="mt-8 border-t pt-5"><h3 className="mb-4 text-base font-bold text-navy">{a.personalSection}</h3><PreferenceSummary draft={personalDraft(data.personal)} personal /></div>
