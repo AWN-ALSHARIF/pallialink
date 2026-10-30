@@ -13,7 +13,7 @@ export function BackNavigation() {
   const visits = useRef<NavigationVisits>(getVisits(router));
   const [previous, setPrevious] = useState<string | undefined>();
   useEffect(() => {
-    if (!user) return;
+    if (!user) { visits.current.clear(); setPrevious(undefined); return; }
     const index = location.state.__TSR_index;
     setPrevious(visits.current.previous(user.id, index, user.role));
     visits.current.visit(user.id, index, location.href);
