@@ -1,6 +1,7 @@
 import { Lock, ShieldCheck } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
+import { UnsavedChanges } from "@/components/unsaved-changes";
 import { useApp, useFmtDate, useName } from "@/lib/app";
 import {
   addAssessment, addNursingObservation, adminAssign, approveClosure, can, CLINICIANS, escalateToPhysician,
@@ -55,6 +56,7 @@ function NurseActions({ user, r }: { user: User; r: Report }) {
   }, [r.id, r.assigneeId]);
   return (
     <>
+      <UnsavedChanges dirty={obs.length > 0 || note.length > 0} />
       {can(user, "returnAck", r) && (
         <button className="btn btn-primary min-h-12 w-full" onClick={() => run(() => returnAcknowledge(user, r.id))}>{t.returnAckBtn}</button>
       )}
@@ -100,6 +102,7 @@ function PhysicianActions({ user, r }: { user: User; r: Report }) {
   const canAssess = can(user, "assessment", r);
   return (
     <>
+      <UnsavedChanges dirty={assessment.length > 0 || plan.length > 0 || note.length > 0} />
       {can(user, "physAck", r) && (
         <button className="btn btn-primary min-h-12 w-full" onClick={() => run(() => physicianAcknowledge(user, r.id))}>{t.physAck}</button>
       )}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Accessibility, Check, Lock, Pencil, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UnsavedChanges } from "@/components/unsaved-changes";
 import { useApp, useFmtDate, useName } from "@/lib/app";
 import { userById } from "@/lib/store";
 import { usePatientAccess } from "@/lib/patient-access";
@@ -79,6 +80,7 @@ export function AccessibilityPanel({ patientId, personal = false }: { patientId:
     finally { setBusy(false); }
   }
   return <section className="min-w-0 py-5" aria-labelledby={formId}>
+    <UnsavedChanges dirty={edit && JSON.stringify(personal ? personalForm : draft) !== JSON.stringify(personal ? personalDraft(own) : profileDraft(data?.profile ?? null))} />
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 id={formId} className="flex items-center gap-2 text-xl font-bold text-navy"><Accessibility className="size-5 shrink-0 text-primary" />{personal ? a.personalTitle : a.title}</h2>{!loading && !failed && !edit && canEdit && <Button variant="outline" className="min-h-11" onClick={() => { setNotice(null); setEdit(true); }}><Pencil />{a.edit}</Button>}</div>
     {loading ? <p className="mt-5 text-muted-foreground" role="status">{a.loading}</p> : failed ? <div className="mt-5"><p role="alert">{a.unavailable}</p><Button variant="outline" className="mt-3 min-h-11" onClick={() => void reload()}><RotateCcw />{a.retry}</Button></div> : <>
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground"><span className={row ? "font-semibold text-primary" : ""}>{row ? a.configured : a.unconfigured}</span>{row && <span>{a.updatedAt}: {fmt(row.updated_at)} · {a.updatedBy}: {name(userById(row.updated_by))}</span>}</div>

@@ -13,7 +13,7 @@ export function isRoleDestination(path: string, role: User["role"]): boolean {
   const pathname = path.split(/[?#]/)[0];
   const clinical = role === "nurse" || role === "physician" || role === "admin";
   if (pathname === "/") return true;
-  if (pathname === "/patient" || pathname === "/report") return !clinical;
+  if (pathname === "/patient" || pathname === "/report" || pathname === "/my-reports") return !clinical;
   if (pathname === "/admin") return role === "admin";
   if (pathname === "/care") return role === "physician";
   if (pathname === "/clinic" || pathname === "/records") return clinical;

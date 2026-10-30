@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { AppShell, PainPill } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { useApp, useFmtDate, useStoreVersion } from "@/lib/app";
@@ -21,8 +21,10 @@ function MyReports() {
   const { t } = useApp();
   const fmt = useFmtDate();
   const { filter } = Route.useSearch();
+  const location = useLocation();
   useStoreVersion();
   if (!user) return null;
+  if (location.pathname !== "/my-reports") return <Outlet />;
   const reports = patientReports(user).filter((r) => filter === "all" || (filter === "completed" ? r.status === "closed" : r.status !== "closed"));
   return <AppShell>
     <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-3xl font-bold text-navy">{t.navigation.myReports}</h1><Button asChild className="min-h-12"><Link to="/report">{t.newReport}</Link></Button></div>
