@@ -7,8 +7,7 @@ The architecture inspection is complete. **No application code, database records
 - Patient/caregiver sessions currently load raw reports and report activity. Those rows include internal return reasons, staff notes and plans even though the patient dashboard hides them. Tracking must use an explicit safe projection and deny raw reads for those roles.
 - Some existing escalation/admin-assignment branches clear physician acknowledgment columns. Preserve previous acknowledgment values and events; distinguish current assignment acknowledgment from historical acknowledgment.
 - Task actions lack fresh care-team/organization validation and row locking. Tighten those checks within the requested workflow changes.
-- Existing notifications cover tasks/follow-ups, are not clickable, and overdue generation lacks a database uniqueness key. Add reference-only event identities and current authorization checks.
-- Report details are staff-only; patient history is inline, not a dedicated list/detail experience. Its ordered status strip suggests milestones that may not have occurred; remove that strip from patient tracking.
+- Existing notifications are task-oriented and not clickable; add unique event keys and current-scope checks. Patient history needs separate list/details and actual milestones instead of the ordered status strip.
 - The existing physician is `u-doc2`, currently ريما سالم / Reema Salem, active in the demonstration organization. Rename only Arabic/English display fields and the matching existing source persona.
 
 ## What will be built
@@ -57,10 +56,9 @@ The architecture inspection is complete. **No application code, database records
 ## Technical changes and compatibility
 - New tables: `workflow_thresholds`, `workflow_assignment_history`, `workflow_handovers`, each with explicit grants, RLS and checked writes.
 - Add nullable notification event/resource/key columns and a partial unique index on new event keys; no legacy-row cleanup. Add event triggers only on application-owned public tables.
-- New checked RPCs: safe patient report reads; operational action reads/configuration; handover creation/acknowledgment/list; eligible recipients; task reassignment; admin aggregate metrics.
-- Compatible replacements: `report_action`, `nursing_task_action`, `admin_reassign_task`, `update_followup`, `list_notifications`, `mark_notifications_read`, `list_assignable_physicians`. Private helpers cannot be directly invoked by authenticated clients; policy helpers return caller-scoped booleans.
+- Checked RPCs cover safe patient reads, monitoring, handovers, eligible recipients, reassignment and metrics. Compatible replacements update existing report/task/follow-up/notification/physician-lookup functions. Internal helpers remain non-callable; policy helpers return caller-scoped booleans.
 - Restrictive patient/caregiver raw-report/activity SELECT policies; notification visibility rechecks present scope. Existing storage/report-level audio authorization stays unchanged.
-- UI changes principally touch the shared shell, report store, tasks/admin adapters, central translations, patient/staff dashboards, report details, existing forms and operations view. Add focused patient-tracking, workflow, handover and navigation modules plus routes. Do not edit generated clients/types/router tree manually; schema types refresh through the migration tool.
+- Update the shared shell, store/adapters, translations, dashboards, details, forms and operations view; add focused tracking, workflow, handover and navigation modules/routes. Generated clients/types/router tree stay tool-managed.
 - New/changed content routes receive app-specific metadata; preserve the existing Arabic RTL medical design.
 - Archive pre-change function/policy definitions and account/assignment metadata before approved execution. DDL is additive and transactional; rollback is a separately approved forward correction, not deleting new history or loosening privacy silently.
 - **Compatibility risk:** the published old frontend still queries raw report tables. Applying the restrictive policies before an updated frontend is published would make patient report history unavailable there. Before any shared-database change, explicitly agree on the rollout window; publication still requires a separate explicit request. Do not automatically publish or silently accept a published-site interruption.
@@ -70,7 +68,7 @@ The architecture inspection is complete. **No application code, database records
 ## Verification and delivery
 - Run focused unit tests for all eight exact status mappings, linked-patient visibility, milestone filtering, operational boundaries/clock selection, assignment eligibility, handover no-transfer semantics and navigation fallback/dirty forms.
 - Exercise the actual patient → nurse acknowledgment → escalation → physician acknowledgment/assessment → closure → patient refresh flow; verify original report and caregiver readback. Keep synthetic test records, labeled as verification data; do not delete/reset them.
-- Direct signed-in unauthorized reads/writes: other patient, revoked/out-of-org staff, unpermitted reassignment, patient raw report/activity access, confidential handovers, fake recipients, duplicate acknowledgment and concurrent notifications.
+- Test direct unauthorized reads/writes, scope revocation, raw patient-access denial, private handovers, fake recipients, duplicate acknowledgments and concurrent notifications.
 - Verify assignment/permission/account metadata before and after rename; audit entries, persistence after refresh/account changes, notifications and analytics agree.
 - Browser-test iPhone-sized 390×844, Android-sized 360×800, tablet 820×1180 and desktop 1440×900 in Arabic/English. Physical iOS/Android system navigation and speech recording remain unverified without device access; report this rather than claiming those tests passed.
 - Deliver completed-feature/file/change/test/security/rename results, limitations, any remaining approvals and publication readiness. No automatic publishing.
