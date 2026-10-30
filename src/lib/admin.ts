@@ -87,7 +87,7 @@ export async function reassignTask(taskId: string, nurseId: string) {
 }
 export async function getOperationalMetrics(from: Date, to: Date, bucket: "day" | "week" | "month", stallHours: number, staff: string | null): Promise<OpsMetrics> {
   const { data, error } = await (await sb()).rpc("admin_operational_metrics", {
-    p_from: from.toISOString(), p_to: to.toISOString(), p_bucket: bucket, p_stall_hours: stallHours, p_staff: staff ?? undefined,
+    p_from: from.toISOString(), p_to: to.toISOString(), p_bucket: bucket, p_stall_hours: stallHours, ...(staff ? { p_staff: staff } : {}),
   }); fail(error);
   return data as unknown as OpsMetrics;
 }
