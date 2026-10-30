@@ -1,4 +1,9 @@
 # Roadmap
+- [ ] Phase 4: inspect workflows/navigation/privacy and present complete SQL plus implementation plan for explicit approval
+- [ ] Phase 4: patient/caregiver tracking, operational monitoring/notifications, scoped handovers, safe reassignment and integrated analytics — awaits database/security approval
+- [ ] Phase 4: universal contextual Back navigation and unsaved-change protection across roles
+- [ ] Phase 4: rename existing u-doc2 to مسك عادل / Misk Adel, preserving account, permissions and assignments — awaits data-update approval
+- [ ] Phase 4: execute workflow/privacy/navigation/refresh and representative viewport tests after approved implementation
 - [x] Activate saved patient choices, visual requests, voice shortcut/recording, read-aloud browser integration and accessible navigation; verified nursing request PL-01025, persistence, RTL/LTR and 43 tests without schema changes (real speech output unavailable: test browser has no voices)
 - [x] Access+ Phase 1: inspect architecture and prepare complete SQL and implementation plan for approval
 - [x] Access+ Phase 1: approved persistence, scoped permission management, patient self-service and profile interfaces
