@@ -15,7 +15,7 @@ import { listReports, userById, type User } from "@/lib/store";
 import { canCreateTask, listFollowUps, listTasks, type FollowUp, type NursingTask } from "@/lib/tasks";
 
 export const Route = createFileRoute("/records/$patientId")({
-  validateSearch: (s: Record<string, unknown>): { section?: "accessibility" } => (s['section'] === "accessibility" ? { section: "accessibility" } : {}),
+  validateSearch: (s: Record<string, unknown>): { section?: Tab } => (TABS.includes(s['section'] as Tab) ? { section: s['section'] as Tab } : {}),
   head: () => ({
     meta: [
       { title: "Patient medical record | PalliaLink" },
@@ -44,8 +44,8 @@ function RecordPage() {
   const user = useGuard("clinic");
   const { t, lang } = useApp();
   const [rec, setRec] = useState<Rec | null | undefined>(undefined);
-  const [tab, setTab] = useState<Tab>(section === "accessibility" ? "accessibility" : "history");
-  useEffect(() => { if (section === "accessibility") setTab("accessibility"); }, [section, patientId]);
+  const tab = section ?? "history";
+  const navigate = Route.useNavigate();
   const [showTask, setShowTask] = useState(false);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [coordinationDirty, setCoordinationDirty] = useState(false);
@@ -82,7 +82,7 @@ function RecordPage() {
       )}
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1" role="tablist">
         {TABS.map((k) => (
-          <Button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} variant={tab === k ? "secondary" : "outline"} className="min-h-11 shrink-0">{k === "accessibility" ? t.access.title : t.tabs[k]}</Button>
+          <Button key={k} role="tab" aria-selected={tab === k} onClick={() => navigate({ search: { section: k } })} variant={tab === k ? "secondary" : "outline"} className="min-h-11 shrink-0">{k === "accessibility" ? t.access.title : t.tabs[k]}</Button>
         ))}
       </div>
       <div className="mt-4">
@@ -262,11 +262,13 @@ function EntryList({ items }: { items: Entry[] }) {
 
 function AddEntry({ patientId, kinds, onSaved }: { patientId: string; kinds: EntryKind[]; onSaved: () => Promise<unknown> }) {
   const { t } = useApp();
-  const [kind, setKind] = useState<EntryKind>(kinds[0]!);
+  const [kind, setKind] = useState<EntryKind>(kinds[0] ?? "encounter");
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [status, setStatus] = useState("");
   const [detail, setDetail] = useState<Record<string, string>>({});
+  const dirty = title.length > 0 || note.length > 0 || status.length > 0 || Object.values(detail).some(Boolean);
+  const discard = useDiscardConfirmation();
   const statuses = STATUSES_FOR[kind];
   const effTitle = kind === "allergy" && status === "none_known" ? t.noKnownAllergies : kind === "vital" ? (title || t.kinds.vital) : title;
   const submit = () => {
@@ -275,10 +277,11 @@ function AddEntry({ patientId, kinds, onSaved }: { patientId: string; kinds: Ent
   };
   return (
     <section className="card space-y-3 p-5">
+      <UnsavedChanges dirty={dirty} discard={discard} />
       <h2 className="font-bold text-navy">{t.addEntry}</h2>
       {kinds.length > 1 && (
         <label className="block text-sm font-semibold">{t.entryKind}
-          <select className="field mt-1" value={kind} onChange={(e) => { setKind(e.target.value as EntryKind); setStatus(""); setDetail({}); }}>
+          <select className="field mt-1" value={kind} onChange={(e) => { const value = e.target.value as EntryKind; discard.request(dirty, () => { setKind(value); setStatus(""); setDetail({}); }); }}>
             {kinds.map((k) => <option key={k} value={k}>{t.kinds[k]}</option>)}
           </select>
         </label>

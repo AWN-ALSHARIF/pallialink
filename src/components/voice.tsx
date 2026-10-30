@@ -13,7 +13,7 @@ function pickMime() {
   return "";
 }
 
-export function VoiceRecorder({ value, onChange }: { value: Recording | null; onChange: (r: Recording | null) => void }) {
+export function VoiceRecorder({ value, onChange, onRecordingChange }: { value: Recording | null; onChange: (r: Recording | null) => void; onRecordingChange?: (recording: boolean) => void }) {
   const { t } = useApp();
   const [recording, setRecording] = useState(false);
   const [secs, setSecs] = useState(0);
@@ -22,6 +22,7 @@ export function VoiceRecorder({ value, onChange }: { value: Recording | null; on
   const rec = useRef<MediaRecorder | null>(null);
   const timer = useRef<number | null>(null);
   const start = useRef(0);
+  useEffect(() => { onRecordingChange?.(recording); return () => onRecordingChange?.(false); }, [recording, onRecordingChange]);
 
   useEffect(() => {
     if (!value) { setUrl(null); return; }

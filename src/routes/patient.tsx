@@ -63,7 +63,7 @@ function PatientHome() {
         <div className="card p-5">
           <div className="text-sm text-muted-foreground">{t.lastReport}</div>
           {reports[0] ? (
-            <div className="mt-2 flex items-center gap-2"><StatusBadge status={reports[0].status} /><span className="text-sm text-muted-foreground">{fmt(reports[0].createdAt)}</span></div>
+            <div className="mt-2 flex flex-wrap items-center gap-2"><span className="text-sm font-semibold text-primary">{t.navigation.status[reports[0].status]}</span><span className="text-sm text-muted-foreground">{fmt(reports[0].createdAt)}</span></div>
           ) : <div className="mt-2 text-muted-foreground">—</div>}
         </div>
       </div>

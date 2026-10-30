@@ -7,6 +7,8 @@ export interface PatientReport {
   pain: number;
   symptoms: Symptom[];
   notes: string;
+  audioPath?: string;
+  audioDurationS?: number;
   status: Status;
   milestones: { at: string; status: Status }[];
 }
@@ -14,7 +16,7 @@ export interface PatientReport {
 /** Presentation projection only. Raw table restrictions await the coordinated Phase 4 rollout. */
 export function patientReportProjection(report: Report): PatientReport {
   const milestones: PatientReport["milestones"] = [{ at: report.createdAt, status: "submitted" }];
-  for (const event of report.activity) {
+  for (const event of [...report.activity].sort((a, b) => a.at.localeCompare(b.at))) {
     if (!event.status || !["status", "escalated", "returned", "return_ack", "assessment", "closure_approved"].includes(event.type)) continue;
     if (milestones.some((m) => m.at === event.at && m.status === event.status)) continue;
     if (milestones[milestones.length - 1]?.status !== event.status) milestones.push({ at: event.at, status: event.status });
@@ -23,6 +25,7 @@ export function patientReportProjection(report: Report): PatientReport {
   return {
     id: report.id, createdAt: report.createdAt, lastUpdate: milestones[milestones.length - 1]?.at ?? report.createdAt,
     pain: report.pain, symptoms: [...report.symptoms], notes: report.notes, status: report.status, milestones,
+    audioPath: report.audioPath, audioDurationS: report.audioDurationS,
   };
 }
 
