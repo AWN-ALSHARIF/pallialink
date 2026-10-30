@@ -7,8 +7,8 @@ export interface PatientReport {
   pain: number;
   symptoms: Symptom[];
   notes: string;
-  audioPath?: string;
-  audioDurationS?: number;
+  audioPath?: string | undefined;
+  audioDurationS?: number | undefined;
   status: Status;
   milestones: { at: string; status: Status }[];
 }

@@ -32,9 +32,9 @@ function MyReports() {
       {(["all", "active", "completed"] as const).map((key) => <Button key={key} asChild variant={filter === key ? "default" : "outline"} className="min-h-12"><Link to="/my-reports" search={{ filter: key }} aria-current={filter === key ? "page" : undefined}>{key === "all" ? t.filterAll : t.navigation[key]}</Link></Button>)}
     </nav>
     <ul className="mt-6 space-y-3">
-      {reports.map((r) => <li key={r.id} className="card p-5"><Link to="/my-reports/$reportId" params={{ reportId: r.id }} search={{ filter }} className="flex flex-wrap items-center gap-4">
+      {reports.map((r) => <li key={r.id} className="card p-5"><Link to="/my-reports/$reportId" params={{ reportId: r.id }} search={{ filter }} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
         <PainPill pain={r.pain} /><div className="min-w-0 flex-1"><h2 dir="ltr" className="font-mono font-semibold text-start">{r.id}</h2><p className="mt-1 text-sm">{r.symptoms.map((s) => t.symptoms[s]).join("، ") || t.painLevel}</p><p className="mt-1 text-xs text-muted-foreground">{t.date}: {fmt(r.createdAt)}</p><p className="mt-1 text-xs text-muted-foreground">{t.navigation.lastUpdate}: {fmt(r.lastUpdate)}</p></div>
-        <span className="text-sm font-semibold text-primary">{t.navigation.status[r.status]}</span>
+        <span className="col-span-2 text-sm font-semibold text-primary sm:max-w-64">{t.navigation.status[r.status]}</span>
       </Link></li>)}
       {!reports.length && <li className="py-6 text-muted-foreground">{t.noReports}</li>}
     </ul>
