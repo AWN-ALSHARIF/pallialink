@@ -1,7 +1,9 @@
 import { accessibilityAr, accessibilityEn } from "./accessibility-i18n";
+import { navigationAr, navigationEn } from "./navigation-i18n";
 export type Lang = "ar" | "en";
 
 const ar = {
+  navigation: navigationAr,
   access: accessibilityAr,
   brand: "باليا لينك",
   tagline: "لأن الرعاية لا تتوقف",
@@ -238,6 +240,7 @@ const ar = {
 type Dict = typeof ar;
 
 const en: Dict = {
+  navigation: navigationEn,
   access: accessibilityEn,
   brand: "PalliaLink",
   tagline: "Because Care Never Stops",

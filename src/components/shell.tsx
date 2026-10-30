@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { patientFeatures, usePatientAccess } from "@/lib/patient-access";
 import { Button } from "@/components/ui/button";
 import { ReadAloud } from "@/components/patient-communication";
+import { BackNavigation } from "@/components/navigation";
 
 export function Logo() {
   const { t } = useApp();
@@ -135,7 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       {user?.role === "patient" && features.simplified && <nav aria-label={t.brand} className="mx-auto flex max-w-7xl flex-wrap gap-3 px-4 pt-4"><Button asChild className="min-h-14"><Link to="/patient">{t.backHome}</Link></Button><Button asChild variant="outline" className="min-h-14"><Link to="/report">{t.newReport}</Link></Button></nav>}
-      <main id="patient-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-6 md:py-8">{user?.role === "patient" && features.tts && <ReadAloud />}{children}</main>
+      <main id="patient-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-6 md:py-8"><BackNavigation />{user?.role === "patient" && features.tts && <ReadAloud />}{children}</main>
     </div>
   );
 }

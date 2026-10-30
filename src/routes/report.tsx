@@ -9,6 +9,7 @@ import { submitReport, SYMPTOMS, type Report, type Symptom } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { VoiceRecorder, type Recording } from "@/components/voice";
 import { Button } from "@/components/ui/button";
+import { UnsavedChanges } from "@/components/unsaved-changes";
 
 export const Route = createFileRoute("/report")({
   head: () => ({
@@ -68,6 +69,7 @@ function ReportPage() {
 
   return (
     <AppShell>
+      <UnsavedChanges dirty={pain !== null || symptoms.length > 0 || notes.length > 0 || audio !== null} />
       <div className="mx-auto max-w-2xl space-y-6">
         <h1 className="text-3xl font-bold text-navy">{t.newReport}</h1>
         <section className="card p-6">
