@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Phase 4: inspect workflows/navigation/privacy and present complete SQL plus implementation plan for explicit approval
+- [x] Phase 4: inspect workflows/navigation/privacy and prepare complete unexecuted SQL plus implementation plan for explicit approval
 - [ ] Phase 4: patient/caregiver tracking, operational monitoring/notifications, scoped handovers, safe reassignment and integrated analytics — awaits database/security approval
 - [ ] Phase 4: universal contextual Back navigation and unsaved-change protection across roles
 - [ ] Phase 4: rename existing u-doc2 to مسك عادل / Misk Adel, preserving account, permissions and assignments — awaits data-update approval
