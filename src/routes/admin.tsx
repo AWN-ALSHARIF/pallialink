@@ -441,3 +441,203 @@ function Analytics() {
     </>
   );
 }
+
+/* ---------- Phase 3: Operational Analytics ---------- */
+
+function TimingCard({ title, s }: { title: string; s: TimingStat | undefined }) {
+  const { t } = useApp();
+  const u = t.adm.ops.units;
+  return (
+    <div className="card p-4">
+      <div className="text-sm text-muted-foreground">{title}</div>
+      {noSample(s) ? (
+        <div className="mt-2 text-sm font-semibold text-muted-foreground">{t.adm.insufficient}</div>
+      ) : (
+        <>
+          <div className="mt-1 text-2xl font-bold text-navy">{fmtElapsed(s!.avg_minutes, u)}</div>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span>{t.adm.ops.median}: {fmtElapsed(s!.median_minutes, u)}</span>
+            <span>{t.adm.ops.p90}: {fmtElapsed(s!.p90_minutes, u)}</span>
+            <span>{t.adm.ops.sample}: {s!.n}</span>
+          </div>
+        </>
+      )}
+      {!!s?.missing_escalation && <div className="mt-1 text-xs text-warning">{t.adm.ops.missingEsc}: {s.missing_escalation}</div>}
+    </div>
+  );
+}
+
+function useOpsRange() {
+  const [preset, setPreset] = useState<"7" | "30" | "90" | "custom">("30");
+  const [bucket, setBucket] = useState<"day" | "week" | "month">("day");
+  const [from, setFrom] = useState(() => new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10));
+  const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [stallHours, setStallHours] = useState(24);
+  const [staff, setStaff] = useState<string | null>(null);
+  const pick = (p: "7" | "30" | "90") => {
+    setPreset(p);
+    setFrom(new Date(Date.now() - Number(p) * 864e5).toISOString().slice(0, 10));
+    setTo(new Date().toISOString().slice(0, 10));
+  };
+  return { preset, setPreset, pick, bucket, setBucket, from, setFrom, to, setTo, stallHours, setStallHours, staff, setStaff };
+}
+
+function Operations() {
+  const { t, lang } = useApp();
+  const name = useName();
+  const fmt = useFmtDate();
+  const r = useOpsRange();
+  const staff = useAsync(listStaff, []);
+  const { data: m, err } = useAsync<OpsMetrics>(
+    () => getOperationalMetrics(new Date(r.from), new Date(r.to + "T23:59:59"), r.bucket, r.stallHours, r.staff),
+    [r.from, r.to, r.bucket, r.stallHours, r.staff]);
+  const pending = useAsync<PendingActions>(getPendingActions, []);
+  const lbl = (b: string) => new Date(b).toLocaleDateString(lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", { day: "numeric", month: "short" });
+  const trend = (m?.trend ?? []).map((x) => ({ ...x, label: lbl(x.bucket) }));
+  const sc = m?.status_counts;
+  const statusData = sc ? (["submitted", "acknowledged", "awaiting_physician", "under_review", "follow_up", "returned_to_nursing", "nursing_follow_up", "closed"] as const)
+    .map((k) => ({ label: t.status[k], count: sc[k] })) : [];
+  const assigneeData = (m?.by_assignee ?? []).map((a) => ({ label: name(userById(a.assignee_id)), count: a.open_reports }));
+  const cards: [string, number | null | undefined, string?][] = sc ? [
+    [t.adm.ops.total, sc.total], [t.adm.ops.awaitingNurse, sc.submitted], [t.adm.ops.awaitingPhys, sc.awaiting_physician],
+    [t.adm.ops.underReview, sc.under_review], [t.adm.ops.nursingFollow, sc.nursing_follow_up + sc.follow_up], [t.adm.ops.returned, sc.returned_to_nursing],
+    [t.adm.ops.closed, sc.closed], [t.adm.ops.escPct, m!.escalation_pct, "%"], [t.adm.ops.closureRate, m!.closure_rate_pct, "%"], [t.adm.ops.stalled, m!.stalled],
+  ] : [];
+  const pendingGroups = ["awaiting_nurse_ack", "awaiting_physician_ack", "needs_assessment", "returned_to_nursing", "nursing_follow_up", "open"] as const;
+  return (
+    <>
+      <div className="card mb-4 flex flex-wrap items-end gap-3 p-4">
+        <div className="flex flex-wrap gap-2">
+          {(["7", "30", "90"] as const).map((p) => (
+            <button key={p} className={`btn min-h-10 ${r.preset === p ? "btn-navy" : "btn-outline"}`} onClick={() => r.pick(p)}>
+              {p === "7" ? t.adm.ops.range7 : p === "30" ? t.adm.ops.range30 : t.adm.ops.range90}
+            </button>
+          ))}
+          <button className={`btn min-h-10 ${r.preset === "custom" ? "btn-navy" : "btn-outline"}`} onClick={() => r.setPreset("custom")}>{t.adm.ops.custom}</button>
+        </div>
+        {r.preset === "custom" && (
+          <>
+            <label className="text-sm">{t.adm.from}<input type="date" className="field mt-1" value={r.from} onChange={(e) => r.setFrom(e.target.value)} /></label>
+            <label className="text-sm">{t.adm.to}<input type="date" className="field mt-1" value={r.to} onChange={(e) => r.setTo(e.target.value)} /></label>
+          </>
+        )}
+        <div className="flex gap-2">
+          {(["day", "week", "month"] as const).map((b) => (
+            <button key={b} className={`btn min-h-10 ${r.bucket === b ? "btn-navy" : "btn-outline"}`} onClick={() => r.setBucket(b)}>
+              {b === "day" ? (lang === "ar" ? "يومي" : "Daily") : b === "week" ? t.adm.weekly : t.adm.monthly}
+            </button>
+          ))}
+        </div>
+        <label className="text-sm">{t.adm.ops.stallHours}
+          <input type="number" min={1} max={720} className="field mt-1 w-24" value={r.stallHours}
+            onChange={(e) => r.setStallHours(Math.max(1, Math.min(720, Number(e.target.value) || 24)))} />
+        </label>
+        <label className="text-sm">{t.adm.selectStaff}
+          <select className="field mt-1" value={r.staff ?? ""} onChange={(e) => r.setStaff(e.target.value || null)}>
+            <option value="">{t.adm.ops.staffFilter}</option>
+            {(staff.data ?? []).map((s) => <option key={s.id} value={s.id}>{name(s)}</option>)}
+          </select>
+        </label>
+      </div>
+
+      {err ? <Err /> : !m ? <Loading /> : (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {cards.map(([label, v, suffix]) => (
+              <div key={label} className="card p-4">
+                <div className="text-xs text-muted-foreground sm:text-sm">{label}</div>
+                <div className="mt-1 text-2xl font-bold text-navy">{v == null ? "—" : `${v}${suffix ?? ""}`}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <TimingCard title={t.adm.ops.nurseAck} s={m.nurse_ack} />
+            <TimingCard title={t.adm.ops.physAck} s={m.physician_ack} />
+            <TimingCard title={t.adm.ops.toReview} s={m.submission_to_review} />
+            <TimingCard title={t.adm.ops.resolution} s={m.resolution} />
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <ChartCard title={t.adm.ops.chartSubmitted} empty={!trend.length}>
+              <ResponsiveContainer><BarChart data={trend}><XAxis dataKey="label" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip />
+                <Bar dataKey="submitted" name={t.adm.ops.chartSubmitted} fill="var(--color-primary)" radius={4} />
+                <Bar dataKey="closed" name={t.adm.ops.closed} fill="var(--color-success)" radius={4} /></BarChart></ResponsiveContainer>
+            </ChartCard>
+            <ChartCard title={t.adm.ops.chartStatus} empty={!statusData.some((d) => d.count)}>
+              <ResponsiveContainer><BarChart data={statusData}><XAxis dataKey="label" fontSize={10} interval={0} angle={-20} textAnchor="end" height={60} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip />
+                <Bar dataKey="count" name={t.adm.count} fill="var(--color-navy)" radius={4} /></BarChart></ResponsiveContainer>
+            </ChartCard>
+            <ChartCard title={t.adm.ops.chartAck} empty={!trend.some((x) => x.avg_nurse_ack_minutes != null)}>
+              <ResponsiveContainer><LineChart data={trend}><XAxis dataKey="label" fontSize={11} /><YAxis fontSize={11} /><Tooltip />
+                <Line dataKey="avg_nurse_ack_minutes" name={t.adm.ops.nurseAck} stroke="var(--color-navy)" strokeWidth={2} /></LineChart></ResponsiveContainer>
+            </ChartCard>
+            <ChartCard title={t.adm.ops.chartResolution} empty={!trend.some((x) => x.avg_resolution_minutes != null)}>
+              <ResponsiveContainer><LineChart data={trend}><XAxis dataKey="label" fontSize={11} /><YAxis fontSize={11} /><Tooltip />
+                <Line dataKey="avg_resolution_minutes" name={t.adm.ops.resolution} stroke="var(--color-primary)" strokeWidth={2} /></LineChart></ResponsiveContainer>
+            </ChartCard>
+            <ChartCard title={t.adm.ops.chartEsc} empty={!trend.some((x) => x.escalations > 0)}>
+              <ResponsiveContainer><BarChart data={trend}><XAxis dataKey="label" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip />
+                <Bar dataKey="escalations" name={t.adm.ops.chartEsc} fill="var(--color-warning)" radius={4} /></BarChart></ResponsiveContainer>
+            </ChartCard>
+            <ChartCard title={t.adm.ops.chartAssignee} empty={!assigneeData.length}>
+              <ResponsiveContainer><BarChart data={assigneeData}><XAxis dataKey="label" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip />
+                <Bar dataKey="count" name={t.adm.openReports} fill="var(--color-navy)" radius={4} /></BarChart></ResponsiveContainer>
+            </ChartCard>
+          </div>
+        </>
+      )}
+
+      <section className="mt-6">
+        <h2 className="mb-3 text-lg font-bold text-navy">{t.adm.ops.pendingTitle}</h2>
+        {pending.err ? <Err /> : !pending.data ? <Loading /> : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="card p-4">
+              <h3 className="mb-2 font-semibold">{t.adm.ops.pendingReports}</h3>
+              {pending.data.reports.length === 0 ? <p className="text-sm text-muted-foreground">{t.adm.ops.noPending}</p> : (
+                <ul className="space-y-2">
+                  {pendingGroups.map((g) => {
+                    const rows = pending.data!.reports.filter((x) => x.category === g);
+                    if (!rows.length) return null;
+                    return (
+                      <li key={g}>
+                        <div className="mb-1 text-xs font-bold text-muted-foreground">{t.adm.ops.cat[g]} ({rows.length})</div>
+                        <ul className="space-y-1.5">
+                          {rows.map((x) => (
+                            <li key={x.report_id} className="flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm">
+                              <Link to="/reports/$id" params={{ id: x.report_id }} className="font-mono font-semibold text-primary" aria-label={`${t.adm.ops.openReport} ${x.report_id}`}>{x.report_id}</Link>
+                              <StatusBadge status={x.status as Status} />
+                              <span className="text-xs text-muted-foreground">
+                                {t.adm.ops.responsible}: {x.responsible_id ? name(userById(x.responsible_id)) : t.adm.none} · {t.adm.ops.elapsed}: {fmtElapsed(x.elapsed_minutes, t.adm.ops.units)}
+                                {x.last_action && <> · {t.adm.ops.lastAction}: {fmt(x.last_action.at)}</>}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+            <div className="card p-4">
+              <h3 className="mb-2 font-semibold">{t.adm.ops.pendingFollowups}</h3>
+              {pending.data.followups.length === 0 ? <p className="text-sm text-muted-foreground">{t.adm.ops.noPending}</p> : (
+                <ul className="space-y-1.5">
+                  {pending.data.followups.map((f) => (
+                    <li key={f.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm">
+                      <span className="font-medium">{f.purpose}</span>
+                      {f.overdue && <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive">{t.adm.ops.overdue}</span>}
+                      <span className="text-xs text-muted-foreground">
+                        {t.adm.ops.responsible}: {name(userById(f.responsible_id))} · {t.adm.ops.targetDate}: {f.target_date}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+      <p className="mt-4 text-xs text-muted-foreground">{t.adm.ops.note}</p>
+    </>
+  );
+}
