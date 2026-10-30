@@ -27,6 +27,30 @@ export interface Metrics {
   overdue_followups: number; followups_done: number;
 }
 
+/** Operational analytics (Phase 3). All timing stats exclude incomplete timestamp pairs; n is the sample size. */
+export interface TimingStat { avg_minutes: number | null; median_minutes: number | null; p90_minutes: number | null; n: number; missing_escalation?: number }
+export interface OpsMetrics {
+  status_counts: Record<"total" | "submitted" | "acknowledged" | "awaiting_physician" | "under_review" | "follow_up" | "returned_to_nursing" | "nursing_follow_up" | "closed", number>;
+  nurse_ack: TimingStat; physician_ack: TimingStat; submission_to_review: TimingStat; resolution: TimingStat;
+  escalation_pct: number | null; closure_rate_pct: number | null; stalled: number;
+  trend: { bucket: string; submitted: number; closed: number; escalations: number; avg_nurse_ack_minutes: number | null; avg_resolution_minutes: number | null }[];
+  by_assignee: { assignee_id: string; open_reports: number }[];
+}
+export interface PendingReport { report_id: string; patient_id: string; status: string; category: string; responsible_id: string | null; elapsed_minutes: number; last_action: { type: string; at: string; by: string } | null }
+export interface PendingFollowup { id: number; patient_id: string; purpose: string; responsible_id: string; target_date: string; overdue: boolean }
+export interface PendingActions { reports: PendingReport[]; followups: PendingFollowup[] }
+
+/** Format an elapsed-minutes value for display; null-safe, never treats missing as zero. */
+export function fmtElapsed(minutes: number | null | undefined, unit: { min: string; hr: string; day: string }): string {
+  if (minutes == null || !Number.isFinite(minutes)) return "—";
+  const m = Math.round(minutes);
+  if (m < 60) return `${m} ${unit.min}`;
+  if (m < 60 * 24) return `${Math.round(m / 60)} ${unit.hr}`;
+  return `${Math.round(m / 1440)} ${unit.day}`;
+}
+/** True when a timing stat has no usable sample (averages must be hidden, not shown as 0). */
+export const noSample = (s: TimingStat | null | undefined) => !s || !s.n;
+
 const fail = (e: unknown) => { if (e) throw new Error("forbidden"); };
 
 export async function listStaff(): Promise<Staff[]> {
