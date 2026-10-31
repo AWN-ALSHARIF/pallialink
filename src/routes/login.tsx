@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { HeartHandshake, Stethoscope, User, UserCog, Users } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Disclaimer, LangButton, Logo } from "@/components/shell";
 import { useApp, useName } from "@/lib/app";
-import { isClinical, type Role } from "@/lib/store";
+import { type Role } from "@/lib/store";
+import { roleDashboard } from "@/lib/navigation";
 import { demoAccountGroups } from "@/lib/demo-accounts";
 
 export const Route = createFileRoute("/login")({
@@ -31,6 +32,9 @@ function Login() {
   const [failed, setFailed] = useState(false);
   const signingIn = useRef(false);
   const groups = demoAccountGroups();
+  const router = useRouter();
+  // Warm dashboard code while the user chooses an account; no data is fetched here.
+  useEffect(() => { for (const to of ["/patient", "/clinic", "/care", "/admin"] as const) void router.loadRouteChunk(router.routesByPath[to]).catch(() => {}); }, [router]);
   const signIn = async (id: string, role: Role) => {
     if (signingIn.current) return;
     signingIn.current = true;
@@ -38,7 +42,7 @@ function Login() {
     setFailed(false);
     try {
       await setUserId(id);
-      await navigate({ to: isClinical(role) ? "/clinic" : "/patient" });
+      await navigate({ to: roleDashboard(role) });
     } catch { setFailed(true); }
     finally { signingIn.current = false; setPending(null); }
   };
