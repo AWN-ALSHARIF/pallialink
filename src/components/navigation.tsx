@@ -20,10 +20,12 @@ export function BackNavigation() {
   }, [location.href, location.state.__TSR_index, user?.id, user?.role]);
   if (!user) return null;
   const fallback = roleDashboard(user.role);
+  // Top-level dashboard with no prior page: hide instead of showing a dead button.
+  if (!previous && location.pathname === fallback) return null;
   const Arrow = lang === "ar" ? ArrowRight : ArrowLeft;
   return (
     <div className="mb-4">
-      <Button variant="outline" className="min-h-11" disabled={!previous && location.pathname === fallback}
+      <Button variant="outline" className="min-h-11"
         onClick={() => { if (previous) router.history.back(); else void router.navigate({ to: fallback }); }}>
         <Arrow className="size-4" aria-hidden="true" />{t.back}
       </Button>
