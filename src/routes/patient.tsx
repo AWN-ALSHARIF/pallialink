@@ -8,7 +8,7 @@ import { AppShell, Disclaimer, PainPill, StatusBadge } from "@/components/shell"
 import { AccessibilityPanel } from "@/components/accessibility";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
-import { listReports, patientById, STATUSES, type Status } from "@/lib/store";
+import { listReports, patientById } from "@/lib/store";
 
 export const Route = createFileRoute("/patient")({
   head: () => ({
@@ -63,13 +63,13 @@ function PatientHome() {
         <div className="card p-5">
           <div className="text-sm text-muted-foreground">{t.lastReport}</div>
           {reports[0] ? (
-            <div className="mt-2 flex items-center gap-2"><StatusBadge status={reports[0].status} /><span className="text-sm text-muted-foreground">{fmt(reports[0].createdAt)}</span></div>
+            <div className="mt-2 flex flex-wrap items-center gap-2"><span className="text-sm font-semibold text-primary">{t.navigation.status[reports[0].status]}</span><span className="text-sm text-muted-foreground">{fmt(reports[0].createdAt)}</span></div>
           ) : <div className="mt-2 text-muted-foreground">—</div>}
         </div>
       </div>
 
       {simple && <Button variant="outline" className="mt-6 min-h-14" aria-expanded={historyOpen} aria-controls="patient-history" onClick={() => setHistoryOpen(!historyOpen)}>{t.access.historyToggle}</Button>}
-      <div id="patient-history" hidden={simple && !historyOpen}><h2 className="mt-10 text-xl font-bold text-navy">{t.reportHistory}</h2>
+      <div id="patient-history" hidden={simple && !historyOpen}><div className="mt-10 flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold text-navy">{t.reportHistory}</h2><Button asChild variant="outline" className="min-h-12"><Link to="/my-reports" search={{ filter: "all" }}>{t.navigation.myReports}</Link></Button></div>
       <div className="mt-4 space-y-3">
         {reports.length === 0 && <p className="text-muted-foreground">{t.noReports}</p>}
         {reports.map((r) => (
@@ -79,8 +79,7 @@ function PatientHome() {
               <div className="font-semibold">{r.id}</div>
               <div className="text-sm text-muted-foreground">{fmt(r.createdAt)} · {r.symptoms.map((s) => t.symptoms[s]).join("، ") || "—"}</div>
             </div>
-            <StatusProgress status={r.status} />
-            <StatusBadge status={r.status} />
+            <Button asChild variant="ghost" className="min-h-12 whitespace-normal text-start"><Link to="/my-reports/$reportId" params={{ reportId: r.id }} search={{ filter: "all" }}>{t.navigation.status[r.status]}</Link></Button>
           </div>
         ))}
       </div>
@@ -92,11 +91,3 @@ function PatientHome() {
   );
 }
 
-function StatusProgress({ status }: { status: Status }) {
-  const idx = STATUSES.indexOf(status);
-  return (
-    <div className="hidden gap-1 sm:flex" aria-hidden>
-      {STATUSES.map((s, i) => <span key={s} className={`h-1.5 w-6 rounded-full ${i <= idx ? "bg-primary" : "bg-border"}`} />)}
-    </div>
-  );
-}

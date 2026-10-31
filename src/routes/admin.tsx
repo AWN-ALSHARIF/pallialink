@@ -5,6 +5,7 @@ import { Activity, BarChart3, Building2, Gauge, KeyRound, Lock, ScrollText, Sear
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AppShell, StatusBadge } from "@/components/shell";
+import { UnsavedChanges, useDiscardConfirmation } from "@/components/unsaved-changes";
 import { useApp, useFmtDate, useName } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
 import {
@@ -245,12 +246,15 @@ function PatientsTab() {
   const staff = useAsync(listStaff, []);
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState<{ id: string; team: string[] } | null>(null);
+  const discard = useDiscardConfirmation();
+  const dirty = !!edit && [...edit.team].sort().join("|") !== [...(patients.data?.find((p) => p.id === edit.id)?.careTeam ?? [])].sort().join("|");
   const [confirm, setConfirm] = useState(false);
   const { run, node } = useAction();
   const list = (patients.data ?? []).filter((p) => (p.nameAr + p.nameEn + (p.mrn ?? "")).toLowerCase().includes(q.toLowerCase()));
   const roleOf = (id: string) => staff.data?.find((s) => s.id === id)?.role;
   return (
     <>
+      <UnsavedChanges dirty={dirty} discard={discard} />
       {node}
       <p className="mb-3 flex items-center gap-2 text-xs text-muted-foreground"><Lock className="size-3.5" /> {t.adm.adminNoClinical}</p>
       <SearchBox q={q} setQ={setQ} />
@@ -260,7 +264,7 @@ function PatientsTab() {
             <div key={p.id} className="card p-4 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div><div className="font-bold text-navy">{name(p)}</div><div className="text-muted-foreground">{t.adm.mrn}: {p.mrn ?? "—"}</div></div>
-                <button className="btn btn-outline min-h-9 text-xs" onClick={() => setEdit({ id: p.id, team: p.careTeam })}>{t.adm.editTeam}</button>
+                <button className="btn btn-outline min-h-9 text-xs" onClick={() => discard.request(dirty, () => setEdit({ id: p.id, team: p.careTeam }))}>{t.adm.editTeam}</button>
               </div>
               <dl className="mt-3 grid grid-cols-2 gap-2">
                 <div><dt className="text-muted-foreground">{t.adm.physician}</dt><dd>{p.careTeam.filter((x) => roleOf(x) === "physician").map((x) => name(userById(x))).join("، ") || "—"}</dd></div>
@@ -286,7 +290,7 @@ function PatientsTab() {
                   ))}
                   <div className="mt-2 flex gap-2">
                     <button className="btn btn-primary min-h-10" onClick={() => setConfirm(true)}>{t.adm.save}</button>
-                    <button className="btn btn-outline min-h-10" onClick={() => setEdit(null)}>{t.adm.cancel}</button>
+                    <button className="btn btn-outline min-h-10" onClick={() => discard.request(dirty, () => setEdit(null))}>{t.adm.cancel}</button>
                   </div>
                 </div>
               )}
@@ -308,6 +312,7 @@ function PermsTab() {
   const audit = useAsync(listAudit, []);
   const [sel, setSel] = useState("");
   const [draft, setDraft] = useState<Record<string, boolean>>({});
+  const discard = useDiscardConfirmation();
   const [confirm, setConfirm] = useState(false);
   const { run, node } = useAction();
   const s = staff.data?.find((x) => x.id === sel);
@@ -317,9 +322,10 @@ function PermsTab() {
   const history = (audit.data ?? []).filter((a) => a.action.startsWith("permission_") && (!sel || a.targetUserId === sel));
   return (
     <>
+      <UnsavedChanges dirty={changes.length > 0} discard={discard} />
       {node}
       {staff.err ? <Err /> : (
-        <select className="field max-w-md" value={sel} onChange={(e) => setSel(e.target.value)} aria-label={t.adm.selectStaff}>
+        <select className="field max-w-md" value={sel} onChange={(e) => { const value = e.target.value; discard.request(changes.length > 0, () => setSel(value)); }} aria-label={t.adm.selectStaff}>
           <option value="">{t.adm.selectStaff}</option>
           {(staff.data ?? []).map((x) => <option key={x.id} value={x.id}>{name(x)} — {t.roles[x.role]}</option>)}
         </select>

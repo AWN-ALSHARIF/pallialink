@@ -14,8 +14,10 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CareRouteImport } from './routes/care'
 import { Route as ClinicRouteImport } from './routes/clinic'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MyReportsRouteImport } from './routes/my-reports'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as ReportRouteImport } from './routes/report'
+import { Route as MyReportsReportIdRouteImport } from './routes/my-reports.$reportId'
 import { Route as RecordsIndexRouteImport } from './routes/records.index'
 import { Route as RecordsPatientIdRouteImport } from './routes/records.$patientId'
 import { Route as ReportsIdRouteImport } from './routes/reports.$id'
@@ -45,6 +47,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyReportsRoute = MyReportsRouteImport.update({
+  id: '/my-reports',
+  path: '/my-reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PatientRoute = PatientRouteImport.update({
   id: '/patient',
   path: '/patient',
@@ -54,6 +61,11 @@ const ReportRoute = ReportRouteImport.update({
   id: '/report',
   path: '/report',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MyReportsReportIdRoute = MyReportsReportIdRouteImport.update({
+  id: '/$reportId',
+  path: '/$reportId',
+  getParentRoute: () => MyReportsRoute,
 } as any)
 const RecordsIndexRoute = RecordsIndexRouteImport.update({
   id: '/records/',
@@ -77,8 +89,10 @@ export interface FileRoutesByFullPath {
   '/care': typeof CareRoute
   '/clinic': typeof ClinicRoute
   '/login': typeof LoginRoute
+  '/my-reports': typeof MyReportsRouteWithChildren
   '/patient': typeof PatientRoute
   '/report': typeof ReportRoute
+  '/my-reports/$reportId': typeof MyReportsReportIdRoute
   '/records/$patientId': typeof RecordsPatientIdRoute
   '/reports/$id': typeof ReportsIdRoute
   '/records/': typeof RecordsIndexRoute
@@ -89,8 +103,10 @@ export interface FileRoutesByTo {
   '/care': typeof CareRoute
   '/clinic': typeof ClinicRoute
   '/login': typeof LoginRoute
+  '/my-reports': typeof MyReportsRouteWithChildren
   '/patient': typeof PatientRoute
   '/report': typeof ReportRoute
+  '/my-reports/$reportId': typeof MyReportsReportIdRoute
   '/records/$patientId': typeof RecordsPatientIdRoute
   '/reports/$id': typeof ReportsIdRoute
   '/records': typeof RecordsIndexRoute
@@ -102,8 +118,10 @@ export interface FileRoutesById {
   '/care': typeof CareRoute
   '/clinic': typeof ClinicRoute
   '/login': typeof LoginRoute
+  '/my-reports': typeof MyReportsRouteWithChildren
   '/patient': typeof PatientRoute
   '/report': typeof ReportRoute
+  '/my-reports/$reportId': typeof MyReportsReportIdRoute
   '/records/$patientId': typeof RecordsPatientIdRoute
   '/reports/$id': typeof ReportsIdRoute
   '/records/': typeof RecordsIndexRoute
@@ -116,8 +134,10 @@ export interface FileRouteTypes {
     | '/care'
     | '/clinic'
     | '/login'
+    | '/my-reports'
     | '/patient'
     | '/report'
+    | '/my-reports/$reportId'
     | '/records/$patientId'
     | '/reports/$id'
     | '/records/'
@@ -128,8 +148,10 @@ export interface FileRouteTypes {
     | '/care'
     | '/clinic'
     | '/login'
+    | '/my-reports'
     | '/patient'
     | '/report'
+    | '/my-reports/$reportId'
     | '/records/$patientId'
     | '/reports/$id'
     | '/records'
@@ -140,8 +162,10 @@ export interface FileRouteTypes {
     | '/care'
     | '/clinic'
     | '/login'
+    | '/my-reports'
     | '/patient'
     | '/report'
+    | '/my-reports/$reportId'
     | '/records/$patientId'
     | '/reports/$id'
     | '/records/'
@@ -153,6 +177,7 @@ export interface RootRouteChildren {
   CareRoute: typeof CareRoute
   ClinicRoute: typeof ClinicRoute
   LoginRoute: typeof LoginRoute
+  MyReportsRoute: typeof MyReportsRouteWithChildren
   PatientRoute: typeof PatientRoute
   ReportRoute: typeof ReportRoute
   RecordsPatientIdRoute: typeof RecordsPatientIdRoute
@@ -197,6 +222,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-reports': {
+      id: '/my-reports'
+      path: '/my-reports'
+      fullPath: '/my-reports'
+      preLoaderRoute: typeof MyReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/patient': {
       id: '/patient'
       path: '/patient'
@@ -210,6 +242,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/report'
       preLoaderRoute: typeof ReportRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/my-reports/$reportId': {
+      id: '/my-reports/$reportId'
+      path: '/$reportId'
+      fullPath: '/my-reports/$reportId'
+      preLoaderRoute: typeof MyReportsReportIdRouteImport
+      parentRoute: typeof MyReportsRoute
     }
     '/records/': {
       id: '/records/'
@@ -235,12 +274,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MyReportsRouteChildren {
+  MyReportsReportIdRoute: typeof MyReportsReportIdRoute
+}
+
+const MyReportsRouteChildren: MyReportsRouteChildren = {
+  MyReportsReportIdRoute: MyReportsReportIdRoute,
+}
+
+const MyReportsRouteWithChildren = MyReportsRoute._addFileChildren(
+  MyReportsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CareRoute: CareRoute,
   ClinicRoute: ClinicRoute,
   LoginRoute: LoginRoute,
+  MyReportsRoute: MyReportsRouteWithChildren,
   PatientRoute: PatientRoute,
   ReportRoute: ReportRoute,
   RecordsPatientIdRoute: RecordsPatientIdRoute,

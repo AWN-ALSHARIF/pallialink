@@ -10,10 +10,10 @@ export function roleDashboard(role: User["role"]): "/patient" | "/clinic" | "/ca
 /** Navigation eligibility only; resource access remains checked by the data layer. */
 export function isRoleDestination(path: string, role: User["role"]): boolean {
   if (!path.startsWith("/") || path.startsWith("//")) return false;
-  const pathname = path.split(/[?#]/)[0];
+  const pathname = path.split(/[?#]/)[0]?.replace(/\/$/, "") || "/";
   const clinical = role === "nurse" || role === "physician" || role === "admin";
   if (pathname === "/") return true;
-  if (pathname === "/patient" || pathname === "/report") return !clinical;
+  if (pathname === "/patient" || pathname === "/report" || pathname === "/my-reports") return !clinical;
   if (pathname === "/admin") return role === "admin";
   if (pathname === "/care") return role === "physician";
   if (pathname === "/clinic" || pathname === "/records") return clinical;
@@ -25,6 +25,11 @@ export function isRoleDestination(path: string, role: User["role"]): boolean {
 export class NavigationVisits {
   private identity: string | null = null;
   private entries = new Map<number, string>();
+
+  clear() {
+    this.entries.clear();
+    this.identity = null;
+  }
 
   visit(identity: string, index: number, path: string) {
     if (identity !== this.identity) {

@@ -7,6 +7,7 @@ import { AppShell, PainPill, StatusBadge } from "@/components/shell";
 import { NewFollowUpForm, NewTaskForm } from "@/components/tasks";
 import { AccessibilityPanel } from "@/components/accessibility";
 import { Button } from "@/components/ui/button";
+import { UnsavedChanges, useDiscardConfirmation } from "@/components/unsaved-changes";
 import { useApp, useFmtDate, useName, useStoreVersion } from "@/lib/app";
 import { addEntry, loadRecord, openDocument, updateProfile, uploadDocument, WRITABLE, type Entry, type EntryKind, type Profile } from "@/lib/emr";
 import { useGuard } from "@/lib/guard";
@@ -14,7 +15,7 @@ import { listReports, userById, type User } from "@/lib/store";
 import { canCreateTask, listFollowUps, listTasks, type FollowUp, type NursingTask } from "@/lib/tasks";
 
 export const Route = createFileRoute("/records/$patientId")({
-  validateSearch: (s: Record<string, unknown>): { section?: "accessibility" } => (s['section'] === "accessibility" ? { section: "accessibility" } : {}),
+  validateSearch: (s: Record<string, unknown>): { section?: Tab } => (TABS.includes(s['section'] as Tab) ? { section: s['section'] as Tab } : {}),
   head: () => ({
     meta: [
       { title: "Patient medical record | PalliaLink" },
@@ -43,10 +44,12 @@ function RecordPage() {
   const user = useGuard("clinic");
   const { t, lang } = useApp();
   const [rec, setRec] = useState<Rec | null | undefined>(undefined);
-  const [tab, setTab] = useState<Tab>(section === "accessibility" ? "accessibility" : "history");
-  useEffect(() => { if (section === "accessibility") setTab("accessibility"); }, [section, patientId]);
+  const tab = section ?? "history";
+  const navigate = Route.useNavigate();
   const [showTask, setShowTask] = useState(false);
   const [showFollowUp, setShowFollowUp] = useState(false);
+  const [coordinationDirty, setCoordinationDirty] = useState(false);
+  const discard = useDiscardConfirmation();
   const reload = useCallback(() => loadRecord(patientId).then(setRec, () => setRec(null)), [patientId]);
   useEffect(() => { if (user) void reload(); }, [user, reload]);
   if (!user) return null;
@@ -58,27 +61,28 @@ function RecordPage() {
 
   return (
     <AppShell>
+      <UnsavedChanges dirty={false} discard={discard} />
       {back}
       <Summary rec={rec} />
       {mayCoordinate && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <button className="btn btn-primary min-h-10" onClick={() => { setShowTask(!showTask); setShowFollowUp(false); }}>
+          <button className="btn btn-primary min-h-10" onClick={() => discard.request(coordinationDirty, () => { setShowTask(!showTask); setShowFollowUp(false); })}>
             <ClipboardList className="size-4" /> {t.newTask}
           </button>
-          <button className="btn btn-outline min-h-10" onClick={() => { setShowFollowUp(!showFollowUp); setShowTask(false); }}>
+          <button className="btn btn-outline min-h-10" onClick={() => discard.request(coordinationDirty, () => { setShowFollowUp(!showFollowUp); setShowTask(false); })}>
             <CalendarPlus className="size-4" /> {t.newFollowUp}
           </button>
         </div>
       )}
       {mayCoordinate && (showTask || showFollowUp) && (
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          {showTask && <NewTaskForm patientId={patientId} onDone={() => { setShowTask(false); void reload(); }} />}
-          {showFollowUp && <NewFollowUpForm patientId={patientId} onDone={() => { setShowFollowUp(false); void reload(); }} />}
+          {showTask && <NewTaskForm patientId={patientId} onDirty={setCoordinationDirty} onDone={() => { setShowTask(false); void reload(); }} />}
+          {showFollowUp && <NewFollowUpForm patientId={patientId} onDirty={setCoordinationDirty} onDone={() => { setShowFollowUp(false); void reload(); }} />}
         </div>
       )}
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1" role="tablist">
         {TABS.map((k) => (
-          <Button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} variant={tab === k ? "secondary" : "outline"} className="min-h-11 shrink-0">{k === "accessibility" ? t.access.title : t.tabs[k]}</Button>
+          <Button key={k} role="tab" aria-selected={tab === k} onClick={() => navigate({ search: { section: k } })} variant={tab === k ? "secondary" : "outline"} className="min-h-11 shrink-0">{k === "accessibility" ? t.access.title : t.tabs[k]}</Button>
         ))}
       </div>
       <div className="mt-4">
@@ -152,8 +156,10 @@ function HistoryTab({ rec, user, onSaved }: { rec: Rec; user: User; onSaved: () 
   const fmt = useFmtDate();
   const [edit, setEdit] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
+  const discard = useDiscardConfirmation();
   const p = rec.profile;
   const str = (k: keyof Profile) => { const v = p?.[k]; return Array.isArray(v) ? v.join("، ") : (v as string | null) ?? ""; };
+  const dirty = edit && PROFILE_FIELDS.some((field) => (form[field.key] ?? "") !== str(field.key));
   const start = () => { setForm(Object.fromEntries(PROFILE_FIELDS.map((f) => [f.key, str(f.key)]))); setEdit(true); };
   const save = () => {
     const changed: Record<string, string | string[] | null> = {};
@@ -167,6 +173,7 @@ function HistoryTab({ rec, user, onSaved }: { rec: Rec; user: User; onSaved: () 
   };
   return (
     <section className="card p-6">
+      <UnsavedChanges dirty={dirty} discard={discard} />
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-bold text-navy">{t.tabs.history}</h2>
         {user.role === "physician" && !edit && <button className="btn btn-outline min-h-10" onClick={start}><Pencil className="size-4" /> {t.editProfile}</button>}
@@ -180,7 +187,7 @@ function HistoryTab({ rec, user, onSaved }: { rec: Rec; user: User; onSaved: () 
           ))}
           <div className="flex gap-2 md:col-span-2">
             <button className="btn btn-primary" onClick={save}>{t.saveProfile}</button>
-            <button className="btn btn-outline" onClick={() => setEdit(false)}>{t.cancel}</button>
+            <button className="btn btn-outline" onClick={() => discard.request(dirty, () => setEdit(false))}>{t.cancel}</button>
           </div>
         </div>
       ) : (
@@ -255,11 +262,13 @@ function EntryList({ items }: { items: Entry[] }) {
 
 function AddEntry({ patientId, kinds, onSaved }: { patientId: string; kinds: EntryKind[]; onSaved: () => Promise<unknown> }) {
   const { t } = useApp();
-  const [kind, setKind] = useState<EntryKind>(kinds[0]!);
+  const [kind, setKind] = useState<EntryKind>(kinds[0] ?? "encounter");
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [status, setStatus] = useState("");
   const [detail, setDetail] = useState<Record<string, string>>({});
+  const dirty = title.length > 0 || note.length > 0 || status.length > 0 || Object.values(detail).some(Boolean);
+  const discard = useDiscardConfirmation();
   const statuses = STATUSES_FOR[kind];
   const effTitle = kind === "allergy" && status === "none_known" ? t.noKnownAllergies : kind === "vital" ? (title || t.kinds.vital) : title;
   const submit = () => {
@@ -268,10 +277,11 @@ function AddEntry({ patientId, kinds, onSaved }: { patientId: string; kinds: Ent
   };
   return (
     <section className="card space-y-3 p-5">
+      <UnsavedChanges dirty={dirty} discard={discard} />
       <h2 className="font-bold text-navy">{t.addEntry}</h2>
       {kinds.length > 1 && (
         <label className="block text-sm font-semibold">{t.entryKind}
-          <select className="field mt-1" value={kind} onChange={(e) => { setKind(e.target.value as EntryKind); setStatus(""); setDetail({}); }}>
+          <select className="field mt-1" value={kind} onChange={(e) => { const value = e.target.value as EntryKind; discard.request(dirty, () => { setKind(value); setStatus(""); setDetail({}); }); }}>
             {kinds.map((k) => <option key={k} value={k}>{t.kinds[k]}</option>)}
           </select>
         </label>

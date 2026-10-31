@@ -39,6 +39,7 @@ function ReportPage() {
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [notes, setNotes] = useState("");
   const [audio, setAudio] = useState<Recording | null>(null);
+  const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Report | null>(null);
   if (!user) return null;
@@ -69,7 +70,7 @@ function ReportPage() {
 
   return (
     <AppShell>
-      <UnsavedChanges dirty={pain !== null || symptoms.length > 0 || notes.length > 0 || audio !== null} />
+      <UnsavedChanges dirty={pain !== null || symptoms.length > 0 || notes.length > 0 || audio !== null || recording} />
       <div className="mx-auto max-w-2xl space-y-6">
         <h1 className="text-3xl font-bold text-navy">{t.newReport}</h1>
         <section className="card p-6">
@@ -101,7 +102,7 @@ function ReportPage() {
           <label htmlFor="notes" className="text-lg font-bold">{t.notes}</label>
           <textarea id="notes" rows={4} maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPh} className="field mt-3" />
         </section>
-        <section className="card p-6"><VoiceRecorder value={audio} onChange={setAudio} /></section>
+        <section className="card p-6"><VoiceRecorder value={audio} onChange={setAudio} onRecordingChange={setRecording} /></section>
         <Button disabled={pain === null || busy} onClick={submit} className="min-h-14 w-full text-lg">{t.submit}</Button>
         <Disclaimer />
       </div>

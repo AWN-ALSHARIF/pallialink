@@ -9,6 +9,7 @@ import {
   type NursingTask, type TaskAction, type TaskPriority, type TaskStatus, type TaskCategory,
 } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
+import { UnsavedChanges, useDiscardConfirmation } from "@/components/unsaved-changes";
 
 const taskStatusStyle: Record<TaskStatus, string> = {
   new: "bg-warning/15 text-foreground border-warning/40",
@@ -34,6 +35,7 @@ export function TaskCard({ task, user, onDone }: { task: NursingTask; user: User
   const [noteFor, setNoteFor] = useState<TaskAction | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const discard = useDiscardConfirmation();
   const actions = [...nurseTaskActions(user, task), ...physicianTaskActions(user, task)];
   const labels: Record<TaskAction, string> = {
     ack: t.taskAck, start: t.taskStart, complete: t.taskComplete,
@@ -48,6 +50,7 @@ export function TaskCard({ task, user, onDone }: { task: NursingTask; user: User
   };
   return (
     <li className="rounded-xl border bg-background p-4 text-sm">
+      <UnsavedChanges dirty={note.length > 0} discard={discard} />
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs font-semibold" dir="ltr">{task.id}</span>
         <strong>{t.taskCat[task.category]}</strong>
@@ -72,7 +75,7 @@ export function TaskCard({ task, user, onDone }: { task: NursingTask; user: User
             {actions.map((a) => (
               <button key={a} disabled={busy}
                 className={cn("btn min-h-10", a === "ack" || a === "start" || a === "complete" || a === "review" ? "btn-primary" : "btn-outline")}
-                onClick={() => (NEEDS_NOTE[a] ? (setNoteFor(noteFor === a ? null : a), setNote("")) : run(a))}>
+                onClick={() => discard.request(note.length > 0, () => { if (NEEDS_NOTE[a]) { setNoteFor(noteFor === a ? null : a); setNote(""); } else run(a); })}>
                 {labels[a]}
               </button>
             ))}
@@ -84,7 +87,7 @@ export function TaskCard({ task, user, onDone }: { task: NursingTask; user: User
                 aria-label={labels[noteFor]} />
               <div className="flex gap-2">
                 <button className="btn btn-primary min-h-10" disabled={busy || (NEEDS_NOTE[noteFor] === "required" && !note.trim())} onClick={() => run(noteFor, note)}>{t.save}</button>
-                <button className="btn btn-outline min-h-10" onClick={() => setNoteFor(null)}>{t.cancel}</button>
+                <button className="btn btn-outline min-h-10" onClick={() => discard.request(note.length > 0, () => { setNoteFor(null); setNote(""); })}>{t.cancel}</button>
               </div>
             </div>
           )}
@@ -124,7 +127,7 @@ export function NurseTasksSection({ user }: { user: User }) {
 }
 
 /** Physician dialog: create a nursing task for a patient on their care team. */
-export function NewTaskForm({ patientId, onDone }: { patientId: string; onDone: () => void }) {
+export function NewTaskForm({ patientId, onDone, onDirty }: { patientId: string; onDone: () => void; onDirty?: (dirty: boolean) => void }) {
   const { t } = useApp();
   const [nurses, setNurses] = useState<{ id: string; nameAr: string; nameEn: string }[]>([]);
   const [nurseId, setNurseId] = useState("");
@@ -133,6 +136,8 @@ export function NewTaskForm({ patientId, onDone }: { patientId: string; onDone: 
   const [due, setDue] = useState("");
   const [instructions, setInstructions] = useState("");
   const [busy, setBusy] = useState(false);
+  const dirty = instructions.length > 0 || due.length > 0 || category !== "general_followup" || priority !== "routine";
+  useEffect(() => { onDirty?.(dirty); return () => onDirty?.(false); }, [dirty, onDirty]);
   useEffect(() => { listCareTeamNurses(patientId).then((n) => { setNurses(n); setNurseId(n[0]?.id ?? ""); }, () => setNurses([])); }, [patientId]);
   const submit = () => {
     setBusy(true);
@@ -143,6 +148,7 @@ export function NewTaskForm({ patientId, onDone }: { patientId: string; onDone: 
   };
   return (
     <section className="card space-y-3 p-5">
+      <UnsavedChanges dirty={dirty} />
       <h2 className="font-bold text-navy">{t.newTask}</h2>
       <label className="block text-sm font-semibold">{t.assignedNurse}
         <select className="field mt-1" value={nurseId} onChange={(e) => setNurseId(e.target.value)}>
@@ -174,14 +180,16 @@ export function NewTaskForm({ patientId, onDone }: { patientId: string; onDone: 
 }
 
 /** Physician dialog: create a documented follow-up plan. */
-export function NewFollowUpForm({ patientId, onDone }: { patientId: string; onDone: () => void }) {
+export function NewFollowUpForm({ patientId, onDone, onDirty }: { patientId: string; onDone: () => void; onDirty?: (dirty: boolean) => void }) {
   const { t } = useApp();
   const name = useName();
-  const team = (patientById(patientId)?.careTeam ?? []).map((id) => userById(id)).filter((u) => u && (u.role === "nurse" || u.role === "physician"));
+  const team = (patientById(patientId)?.careTeam ?? []).map((id) => userById(id)).filter((u): u is User => !!u && (u.role === "nurse" || u.role === "physician"));
   const [purpose, setPurpose] = useState("");
   const [responsible, setResponsible] = useState(team[0]?.id ?? "");
   const [date, setDate] = useState("");
   const [busy, setBusy] = useState(false);
+  const dirty = purpose.length > 0 || date.length > 0 || responsible !== (team[0]?.id ?? "");
+  useEffect(() => { onDirty?.(dirty); return () => onDirty?.(false); }, [dirty, onDirty]);
   const submit = () => {
     setBusy(true);
     createFollowup(patientId, purpose.trim(), responsible, date)
@@ -191,6 +199,7 @@ export function NewFollowUpForm({ patientId, onDone }: { patientId: string; onDo
   };
   return (
     <section className="card space-y-3 p-5">
+      <UnsavedChanges dirty={dirty} />
       <h2 className="font-bold text-navy">{t.newFollowUp}</h2>
       <label className="block text-sm font-semibold">{t.followUpPurpose}
         <input className="field mt-1" value={purpose} onChange={(e) => setPurpose(e.target.value)} />
@@ -198,7 +207,7 @@ export function NewFollowUpForm({ patientId, onDone }: { patientId: string; onDo
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm font-semibold">{t.followUpResponsible}
           <select className="field mt-1" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
-            {team.map((u) => <option key={u!.id} value={u!.id}>{name(u)} · {t.roles[u!.role]}</option>)}
+            {team.map((u) => <option key={u.id} value={u.id}>{name(u)} · {t.roles[u.role]}</option>)}
           </select>
         </label>
         <label className="block text-sm font-semibold">{t.followUpDate}
