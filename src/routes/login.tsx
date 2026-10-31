@@ -34,7 +34,7 @@ function Login() {
   const groups = demoAccountGroups();
   const router = useRouter();
   // Warm dashboard code while the user chooses an account; no data is fetched here.
-  useEffect(() => { for (const to of ["/patient", "/clinic", "/care", "/admin"] as const) { const r = router.routesByPath[to]; if (r) void router.loadRouteChunk(r).catch(() => {}); } }, [router]);
+  useEffect(() => { for (const to of ["/patient", "/clinic", "/care", "/admin"] as const) { const r = router.routesByPath[to]; if (r) void router.loadRouteChunk(r as never)?.catch(() => {}); } }, [router]);
   const signIn = async (id: string, role: Role) => {
     if (signingIn.current) return;
     signingIn.current = true;
