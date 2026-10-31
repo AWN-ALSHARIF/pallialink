@@ -4,7 +4,8 @@
 - [ ] Phase 4: operational monitoring/notifications, scoped handovers, safe reassignment, integrated analytics and safe patient-read boundary — approved SQL deferred by user until coordinated publication; new-schema-dependent UI deferred to avoid broken controls
 - [x] Phase 4: shared contextual Back and dirty report/clinical/accessibility/task/follow-up/admin forms; local discard warnings and router-controlled record tabs
 - [ ] Phase 4: rename existing u-doc2 to مسك عادل / Misk Adel, preserving account, permissions and assignments — approved but deferred until coordinated database/frontend rollout
-- [ ] Phase 4: execute workflow/privacy/navigation/refresh and representative viewport tests after approved implementation
+- [x] Phase 4 frontend verification: real Rana report list/detail, active filter Back, linked caregiver list, patient draft Stay/Leave and admin team-change tab/cancel warnings; no database writes; 390×844, 360×800, 820×1180, 1440×900 list overflow checks
+- [ ] Phase 4 full workflow/privacy/concurrency and post-migration refresh verification — waits on coordinated database/publication rollout; physical devices and remaining form permutations unverified
 - [x] Activate saved patient choices, visual requests, voice shortcut/recording, read-aloud browser integration and accessible navigation; verified nursing request PL-01025, persistence, RTL/LTR and 43 tests without schema changes (real speech output unavailable: test browser has no voices)
 - [x] Access+ Phase 1: inspect architecture and prepare complete SQL and implementation plan for approval
 - [x] Access+ Phase 1: approved persistence, scoped permission management, patient self-service and profile interfaces
