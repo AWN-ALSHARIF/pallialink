@@ -1,8 +1,9 @@
 import type { User } from "./store";
 
-export function roleDashboard(role: User["role"]): "/patient" | "/clinic" | "/care" | "/admin" {
+export function roleDashboard(role: User["role"]): "/patient" | "/clinic" | "/admin" {
   if (role === "admin") return "/admin";
-  if (role === "physician") return "/care";
+  // Physicians land on the approved لوحة الطبيب (/clinic); the Care Hub (/care) is opened from there.
+  if (role === "physician") return "/clinic";
   if (role === "nurse") return "/clinic";
   return "/patient";
 }

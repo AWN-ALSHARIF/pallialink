@@ -6,7 +6,7 @@ describe("role-safe navigation", () => {
     expect(roleDashboard("patient")).toBe("/patient");
     expect(roleDashboard("caregiver")).toBe("/patient");
     expect(roleDashboard("nurse")).toBe("/clinic");
-    expect(roleDashboard("physician")).toBe("/care");
+    expect(roleDashboard("physician")).toBe("/clinic");
     expect(roleDashboard("admin")).toBe("/admin");
   });
   it("preserves prior list filters while excluding inaccessible routes", () => {
