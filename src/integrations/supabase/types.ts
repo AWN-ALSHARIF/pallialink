@@ -861,6 +861,50 @@ export type Database = {
           },
         ]
       }
+      report_attachments: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          id: string
+          kind: string
+          mime_type: string
+          path: string
+          position: number
+          report_id: string
+          size_bytes: number
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          mime_type: string
+          path: string
+          position: number
+          report_id: string
+          size_bytes: number
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          mime_type?: string
+          path?: string
+          position?: number
+          report_id?: string
+          size_bytes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_attachments_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           assignee_id: string | null
@@ -1141,10 +1185,15 @@ export type Database = {
         Args: { p_active: boolean; p_persona: string }
         Returns: undefined
       }
+      can_delete_pending_report_image: {
+        Args: { p_path: string }
+        Returns: boolean
+      }
       can_manage_patient_accessibility: {
         Args: { p_patient: string }
         Returns: boolean
       }
+      can_read_report_image: { Args: { p_path: string }; Returns: boolean }
       can_view_patient: { Args: { p: string }; Returns: boolean }
       can_view_report: { Args: { p_report: string }; Returns: boolean }
       create_followup: {
@@ -1296,6 +1345,18 @@ export type Database = {
           p_audio_duration?: number
           p_audio_mime?: string
           p_audio_path?: string
+          p_notes: string
+          p_pain: number
+          p_symptoms: string[]
+        }
+        Returns: string
+      }
+      submit_report_multimodal: {
+        Args: {
+          p_audio_duration?: number
+          p_audio_mime?: string
+          p_audio_path?: string
+          p_images?: Json
           p_notes: string
           p_pain: number
           p_symptoms: string[]
