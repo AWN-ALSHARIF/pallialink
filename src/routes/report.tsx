@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell, Disclaimer } from "@/components/shell";
 import { useApp } from "@/lib/app";
@@ -11,6 +11,7 @@ import { VoiceRecorder, type Recording } from "@/components/voice";
 import { Button } from "@/components/ui/button";
 import { UnsavedChanges } from "@/components/unsaved-changes";
 import { ReportImagePicker } from "@/components/report-images";
+import { takeReportRequests } from "@/lib/report-request-draft";
 
 export const Route = createFileRoute("/report")({
   head: () => ({
@@ -43,6 +44,11 @@ function ReportPage() {
   const [images, setImages] = useState<File[]>([]);
   const [progress, setProgress] = useState("");
   const [blocked, setBlocked] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    const keys = takeReportRequests(user.id);
+    if (keys.length) setNotes(current => [current, ...keys.map(key => `${t.access.requestPrefix}: ${t.access.pictograms[key as keyof typeof t.access.pictograms] ?? key}`)].filter(Boolean).join("\n"));
+  }, [user?.id]);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Report | null>(null);
