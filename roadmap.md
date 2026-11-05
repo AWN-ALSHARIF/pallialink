@@ -1,4 +1,7 @@
 # Roadmap
+- [ ] Multi-modal reports: inspect current text/audio/pictogram and live storage paths; prepare full additive SQL and private-image storage proposal for explicit approval
+- [ ] Multi-modal reports: after approval, add ordered multiple-image preview/removal/replacement and combined text/images/audio submission; preserve legacy recordings and workflows
+- [ ] Multi-modal reports: verify five-image and mixed-media submissions, authorized nurse/physician playback, refresh and existing reports across Arabic/English desktop/mobile/tablet/PWA; backend work awaits explicit approval
 - [x] Phase 4: inspect workflows/navigation/privacy and prepare complete unexecuted SQL plus implementation plan for explicit approval
 - [x] Phase 4: patient/caregiver list, filters, details and actual milestones built using existing authorized mirror; patient presentation only, not new backend privacy enforcement
 - [ ] Phase 4: operational monitoring/notifications, scoped handovers, safe reassignment, integrated analytics and safe patient-read boundary — approved SQL deferred by user until coordinated publication; new-schema-dependent UI deferred to avoid broken controls
