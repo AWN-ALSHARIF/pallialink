@@ -10,7 +10,7 @@ export interface PatientReport {
   notes: string;
   audioPath?: string | undefined;
   audioDurationS?: number | undefined;
-  images?: ReportImage[];
+  images?: ReportImage[] | undefined;
   status: Status;
   milestones: { at: string; status: Status }[];
 }

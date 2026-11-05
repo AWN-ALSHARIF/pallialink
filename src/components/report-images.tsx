@@ -33,7 +33,7 @@ function StoredImage({ image, number }: { image: ReportImage; number: number }) 
   useEffect(() => { let active = true; reportImageUrl(image.path).then(value => { if (active) setUrl(value); }, () => { if (active) setError(true); }); return () => { active = false; }; }, [image.path]);
   return <div className="min-w-0">{url && <img src={url} alt={`${t.media.image} ${number}`} onError={() => setError(true)} className="aspect-square w-full rounded-md bg-muted object-contain" />}{error && <p role="alert">{t.media.load}</p>}<Button variant="outline" className="mt-2 w-full whitespace-normal" onClick={() => void open()}><ExternalLink />{t.media.open} {number}</Button></div>;
 }
-export function ReportImageGallery({ images }: { images?: ReportImage[] }) {
+export function ReportImageGallery({ images }: { images?: ReportImage[] | undefined }) {
   const { t } = useApp(); if (!images?.length) return null;
   return <section className="mt-6"><h2 className="text-lg font-bold text-navy">{t.media.title}</h2><div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">{[...images].sort((a,b) => a.position - b.position).map((image,i) => <StoredImage key={image.id} image={image} number={i+1} />)}</div></section>;
 }

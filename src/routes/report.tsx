@@ -118,7 +118,7 @@ function ReportPage() {
         <ReportImagePicker value={images} onChange={setImages} disabled={busy || blocked} />
         <section className="card p-6"><VoiceRecorder value={audio} onChange={setAudio} onRecordingChange={setRecording} disabled={busy || blocked} /></section>
         {busy && <p role="status">{progress || t.access.saving}</p>}
-        {blocked && <p role="alert">{t.media.uncertain} <Link to="/my-reports">{t.navigation.myReports}</Link></p>}
+        {blocked && <p role="alert">{t.media.uncertain} <Link to="/my-reports" search={{ filter: "all" }}>{t.navigation.myReports}</Link></p>}
         <Button disabled={pain === null || busy || recording || blocked} onClick={submit} className="min-h-14 w-full text-lg">{t.submit}</Button>
         <Disclaimer />
       </div>
