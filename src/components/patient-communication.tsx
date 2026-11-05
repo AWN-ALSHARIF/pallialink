@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { useApp } from "@/lib/app";
 import { patientFeatures, usePatientAccess } from "@/lib/patient-access";
 import { submitReport } from "@/lib/store";
+import { queueReportRequest } from "@/lib/report-request-draft";
 
 const icons = { pain: Activity, water: Droplets, food: Utensils, medication: Pill, bathroom: Bath, sleep: Moon, breathing: Wind, nausea: Frown, anxiety: HeartHandshake, assistance: HandHelping };
 type Request = keyof typeof icons;
@@ -61,7 +62,7 @@ export function PatientCommunication() {
       {selected && <div ref={requestRef} tabIndex={-1} className="border-y py-5 outline-none" aria-label={`${a.selectedRequest}: ${a.pictograms[selected]}`}>
         <h3 className="text-lg font-bold">{a.selectedRequest}: {a.pictograms[selected]}</h3><p className="mt-2">{a.requestPainHint}</p>
         <fieldset disabled={busy} className="mt-4"><legend className="font-semibold">{t.painLevel}</legend><div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-11">{Array.from({ length: 11 }, (_, i) => <label key={i} className="flex min-h-14 items-center justify-center gap-2 rounded-md border text-lg"><input type="radio" name={`request-pain-${titleId}`} value={i} checked={pain === i} onChange={() => setPain(i)} className="size-5 accent-primary" />{i}</label>)}</div></fieldset>
-        <div className="mt-4 flex flex-wrap gap-3"><Button disabled={busy || pain === null} className="min-h-14" onClick={() => void send()}><Send />{busy ? a.saving : a.sendRequest}</Button><Button variant="outline" disabled={busy} onClick={() => { setSelected(null); setPain(null); }}><X />{a.cancelRequest}</Button></div>
+         <div className="mt-4 flex flex-wrap gap-3"><Button disabled={busy || pain === null} className="min-h-14" onClick={() => void send()}><Send />{busy ? a.saving : a.sendRequest}</Button><Button asChild variant="outline" disabled={busy}><Link to="/report" onClick={() => { if (user && selected) queueReportRequest(user.id, selected); }}>{t.media.combine}</Link></Button><Button variant="outline" disabled={busy} onClick={() => { setSelected(null); setPain(null); }}><X />{a.cancelRequest}</Button></div>
       </div>}
     </>}
     {result && <p role="status" className="border-s-4 border-primary p-4 font-semibold">{a.requestSent}: {a.pictograms[result.request]} · <span dir="ltr">{result.id}</span></p>}

@@ -13,7 +13,7 @@ function pickMime() {
   return "";
 }
 
-export function VoiceRecorder({ value, onChange, onRecordingChange }: { value: Recording | null; onChange: (r: Recording | null) => void; onRecordingChange?: (recording: boolean) => void }) {
+export function VoiceRecorder({ value, onChange, onRecordingChange, onLoadingChange, disabled = false }: { value: Recording | null; onChange: (r: Recording | null) => void; onRecordingChange?: (recording: boolean) => void; onLoadingChange?: (pending: boolean) => void; disabled?: boolean }) {
   const { t } = useApp();
   const [recording, setRecording] = useState(false);
   const [secs, setSecs] = useState(0);
@@ -22,6 +22,23 @@ export function VoiceRecorder({ value, onChange, onRecordingChange }: { value: R
   const rec = useRef<MediaRecorder | null>(null);
   const timer = useRef<number | null>(null);
   const start = useRef(0);
+  const audioInput = useRef<HTMLInputElement>(null);
+  const [loadingFile, setLoadingFile] = useState(false);
+  async function loadFile(file?: File) {
+    if (!file || disabled || loadingFile || recording) return;
+    if (file.size > AUDIO_MAX_BYTES || !["audio/webm","audio/ogg","audio/mp4","audio/mpeg"].includes(file.type.split(";")[0] ?? "")) { setErr(t.media.invalidAudio); return; }
+    setLoadingFile(true); onLoadingChange?.(true); setErr(null);
+    const url = URL.createObjectURL(file); const element = document.createElement("audio"); element.preload = "metadata";
+    try {
+      const duration = await new Promise<number>((resolve, reject) => {
+        const timer = window.setTimeout(() => reject(new Error("audio")), 10000);
+        element.onloadedmetadata = () => { clearTimeout(timer); resolve(element.duration); };
+        element.onerror = () => { clearTimeout(timer); reject(new Error("audio")); }; element.src = url;
+      });
+      if (!Number.isFinite(duration) || duration < 1 || duration > AUDIO_MAX_S) throw new Error("audio");
+      onChange({ blob: file, durationS: duration });
+    } catch { setErr(t.media.invalidAudio); } finally { element.removeAttribute("src"); element.load(); URL.revokeObjectURL(url); setLoadingFile(false); onLoadingChange?.(false); }
+  }
   useEffect(() => { onRecordingChange?.(recording); return () => onRecordingChange?.(false); }, [recording, onRecordingChange]);
 
   useEffect(() => {
@@ -68,7 +85,8 @@ export function VoiceRecorder({ value, onChange, onRecordingChange }: { value: R
       <h2 className="text-lg font-bold">{t.voice.title}</h2>
       <p className="mt-1 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">{t.voice.warn}</p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        {!value && !recording && <Button type="button" variant="outline" onClick={begin} className="min-h-12"><Mic className="size-5" /> {t.voice.record}</Button>}
+        <input ref={audioInput} type="file" className="hidden" aria-label={t.media.audioFile} accept="audio/webm,audio/ogg,audio/mp4,audio/mpeg" onChange={e => { void loadFile(e.target.files?.[0]); e.target.value = ""; }} />
+        {!value && !recording && <><Button disabled={disabled || loadingFile} type="button" variant="outline" onClick={begin} className="min-h-12"><Mic className="size-5" /> {t.voice.record}</Button><Button disabled={disabled || loadingFile} variant="outline" onClick={() => audioInput.current?.click()} className="min-h-12"><Volume2 />{t.media.audioFile}</Button></>}
         {recording && (
           <>
             <Button type="button" onClick={stop} className="min-h-12"><Square className="size-5" /> {t.voice.stop}</Button>
@@ -79,7 +97,7 @@ export function VoiceRecorder({ value, onChange, onRecordingChange }: { value: R
           <>
             <audio aria-label={t.voice.title} controls src={url} className="max-w-full" />
             <span className="text-sm text-muted-foreground">{t.voice.duration}: <span dir="ltr">{Math.round(value.durationS)}{t.voice.sec}</span></span>
-            <Button type="button" variant="outline" onClick={() => onChange(null)} className="min-h-11"><Trash2 className="size-4" /> {t.voice.del}</Button>
+            <Button disabled={disabled} type="button" variant="outline" onClick={() => onChange(null)} className="min-h-11"><Trash2 className="size-4" /> {t.voice.del}</Button>
           </>
         )}
       </div>

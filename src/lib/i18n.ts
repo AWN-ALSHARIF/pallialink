@@ -1,8 +1,10 @@
 import { accessibilityAr, accessibilityEn } from "./accessibility-i18n";
 import { navigationAr, navigationEn } from "./navigation-i18n";
+import { mediaAr, mediaEn } from "./report-media-i18n";
 export type Lang = "ar" | "en";
 
 const ar = {
+  media: mediaAr,
   navigation: navigationAr,
   access: accessibilityAr,
   brand: "باليا لينك",
@@ -240,6 +242,7 @@ const ar = {
 type Dict = typeof ar;
 
 const en: Dict = {
+  media: mediaEn,
   navigation: navigationEn,
   access: accessibilityEn,
   brand: "PalliaLink",

@@ -4,6 +4,7 @@ import { useApp, useFmtDate, useStoreVersion } from "@/lib/app";
 import { useGuard } from "@/lib/guard";
 import { patientReports } from "@/lib/patient-reports";
 import { VoicePlayer } from "@/components/voice";
+import { ReportImageGallery } from "@/components/report-images";
 
 export const Route = createFileRoute("/my-reports/$reportId")({
   head: () => ({ meta: [
@@ -34,6 +35,7 @@ function PatientReportDetails() {
     </dl>
     <h2 className="mt-6 font-bold text-navy">{t.notes}</h2><p className="mt-2 whitespace-pre-wrap break-words">{report.notes || "—"}</p>
     {report.audioPath && <div className="mt-6"><VoicePlayer path={report.audioPath} durationS={report.audioDurationS} /></div>}
+    <ReportImageGallery images={report.images} />
     <h2 className="mt-8 text-xl font-bold text-navy">{t.navigation.timeline}</h2>
     <ol className="mt-4 divide-y border-s ps-5">{report.milestones.map((m, index) => <li key={`${m.at}:${index}`} className="py-4"><p className="font-semibold">{t.navigation.status[m.status]}</p><p className="mt-1 text-sm text-muted-foreground">{fmt(m.at)}</p></li>)}</ol>
   </AppShell>;

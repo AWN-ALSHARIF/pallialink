@@ -1,4 +1,5 @@
 import { listReports, type Report, type Status, type Symptom, type User } from "./store";
+import type { ReportImage } from "./report-media";
 
 export interface PatientReport {
   id: string;
@@ -9,6 +10,7 @@ export interface PatientReport {
   notes: string;
   audioPath?: string | undefined;
   audioDurationS?: number | undefined;
+  images?: ReportImage[] | undefined;
   status: Status;
   milestones: { at: string; status: Status }[];
 }
@@ -26,6 +28,7 @@ export function patientReportProjection(report: Report): PatientReport {
     id: report.id, createdAt: report.createdAt, lastUpdate: milestones[milestones.length - 1]?.at ?? report.createdAt,
     pain: report.pain, symptoms: [...report.symptoms], notes: report.notes, status: report.status, milestones,
     audioPath: report.audioPath, audioDurationS: report.audioDurationS,
+    images: report.images?.map(image => ({ ...image })),
   };
 }
 

@@ -1,7 +1,9 @@
 # Roadmap
-- [x] Multi-modal reports: inspect current text/audio/pictogram and live storage paths; prepare full additive SQL and private-image storage proposal for explicit approval (not applied)
-- [ ] Multi-modal reports: after approval, add ordered multiple-image preview/removal/replacement and combined text/images/audio submission; preserve legacy recordings and workflows
-- [ ] Multi-modal reports: verify five-image and mixed-media submissions, authorized nurse/physician playback, refresh and existing reports across Arabic/English desktop/mobile/tablet/PWA; backend work awaits explicit approval
+- [x] Multi-modal reports: inspect text/audio/pictograms and storage; additive attachment SQL applied and private report-images bucket created; no further database changes or publication
+- [x] Multi-modal reports: ordered multiple-image preview/removal/replacement, combined text/images/audio, uploaded audio and identity-scoped pictogram draft transfer; preserve legacy recordings and workflows
+- [x] Multi-modal reports: five-image-only, text/images, text/audio and all-media reports PL-01033–PL-01037 read back after refresh; nurse review, physician assignment/acknowledgment/assessment/closure, playback, full-size image, failed-upload draft retention and cross-patient/unassigned-physician/direct-write denials verified; 65 tests pass
+- [x] Multi-modal reports: Arabic/English draft and saved details verified in Chromium at desktop 1440×900, iPhone 390×844, Android 360×800 and tablet 820×1180; fallback image decoding, removal and synthetic microphone capture/playback verified
+- [ ] Multi-modal reports: installed PWA and physical iOS Safari/Android verification — installed-device/browser access unavailable; preview has no service-worker controller; not published
 - [x] Phase 4: inspect workflows/navigation/privacy and prepare complete unexecuted SQL plus implementation plan for explicit approval
 - [x] Phase 4: patient/caregiver list, filters, details and actual milestones built using existing authorized mirror; patient presentation only, not new backend privacy enforcement
 - [ ] Phase 4: operational monitoring/notifications, scoped handovers, safe reassignment, integrated analytics and safe patient-read boundary — approved SQL deferred by user until coordinated publication; new-schema-dependent UI deferred to avoid broken controls
