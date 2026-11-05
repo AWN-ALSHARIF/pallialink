@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { VoiceRecorder, type Recording } from "@/components/voice";
 import { Button } from "@/components/ui/button";
 import { UnsavedChanges } from "@/components/unsaved-changes";
+import { ReportImagePicker } from "@/components/report-images";
 
 export const Route = createFileRoute("/report")({
   head: () => ({
@@ -39,6 +40,9 @@ function ReportPage() {
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [notes, setNotes] = useState("");
   const [audio, setAudio] = useState<Recording | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [progress, setProgress] = useState("");
+  const [blocked, setBlocked] = useState(false);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Report | null>(null);
@@ -61,16 +65,19 @@ function ReportPage() {
 
   const toggle = (s: Symptom) => setSymptoms((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
   const submit = () => {
-    if (pain === null) return;
+    if (pain === null || busy || recording || blocked) return;
     setBusy(true);
-    submitReport(user, { pain, symptoms, notes, audio: audio ?? undefined })
-      .then(setDone, (e: Error) => toast.error(e.message === "upload" ? t.voice.uploadErr : t.readOnly))
+    submitReport(user, { pain, symptoms, notes, images, audio: audio ?? undefined, onProgress: (i, total) => setProgress(`${t.media.uploading} ${i}/${total}`) })
+      .then(setDone, (e: Error) => {
+        if (e.message === "uncertain" || e.message === "saved-refresh") setBlocked(true);
+        toast.error(e.message.startsWith("image-upload:") ? `${t.media.failed} ${e.message.split(":")[1]}` : e.message === "uncertain" ? t.media.uncertain : e.message === "saved-refresh" ? t.media.submittedReload : e.message === "upload" ? t.voice.uploadErr : t.readOnly);
+      })
       .finally(() => setBusy(false));
   };
 
   return (
     <AppShell>
-      <UnsavedChanges dirty={pain !== null || symptoms.length > 0 || notes.length > 0 || audio !== null || recording} />
+      <UnsavedChanges dirty={pain !== null || symptoms.length > 0 || notes.length > 0 || audio !== null || images.length > 0 || recording} />
       <div className="mx-auto max-w-2xl space-y-6">
         <h1 className="text-3xl font-bold text-navy">{t.newReport}</h1>
         <section className="card p-6">
@@ -102,8 +109,11 @@ function ReportPage() {
           <label htmlFor="notes" className="text-lg font-bold">{t.notes}</label>
           <textarea id="notes" rows={4} maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPh} className="field mt-3" />
         </section>
-        <section className="card p-6"><VoiceRecorder value={audio} onChange={setAudio} onRecordingChange={setRecording} /></section>
-        <Button disabled={pain === null || busy} onClick={submit} className="min-h-14 w-full text-lg">{t.submit}</Button>
+        <ReportImagePicker value={images} onChange={setImages} disabled={busy || blocked} />
+        <section className="card p-6"><VoiceRecorder value={audio} onChange={setAudio} onRecordingChange={setRecording} disabled={busy || blocked} /></section>
+        {busy && <p role="status">{progress || t.access.saving}</p>}
+        {blocked && <p role="alert">{t.media.uncertain} <Link to="/my-reports">{t.navigation.myReports}</Link></p>}
+        <Button disabled={pain === null || busy || recording || blocked} onClick={submit} className="min-h-14 w-full text-lg">{t.submit}</Button>
         <Disclaimer />
       </div>
     </AppShell>

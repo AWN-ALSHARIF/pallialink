@@ -1,6 +1,7 @@
 // Data layer backed by the Lovable Cloud database. Synthetic demo data only.
 // UI depends only on these functions.
 import { clinicalReadCache } from "./session-cache";
+import { validImage, type ReportImage } from "./report-media";
 
 export type Role = "patient" | "caregiver" | "nurse" | "physician" | "admin";
 export type Status = "submitted" | "acknowledged" | "awaiting_physician" | "under_review" | "follow_up" | "returned_to_nursing" | "nursing_follow_up" | "closed";
@@ -55,6 +56,7 @@ export interface Report {
   returnAckAt?: string | undefined;
   audioPath?: string | undefined;
   audioDurationS?: number | undefined;
+  images?: ReportImage[];
   activity: Activity[];
 }
 interface DB { reports: Report[]; seq: number }
@@ -106,13 +108,14 @@ async function doRefresh() {
   const supabase = await sb();
   const { data: sess } = await supabase.auth.getSession();
   if (!sess.session) { cachedPersonaId = null; cache = { reports: [], seq: 0 }; notify(); return; }
-  const [{ data: reps, error: e1 }, { data: acts, error: e2 }, { data: me, error: e3 }, { data: pats, error: e4 }] = await Promise.all([
+  const [{ data: reps, error: e1 }, { data: acts, error: e2 }, { data: me, error: e3 }, { data: pats, error: e4 }, { data: attachments, error: e5 }] = await Promise.all([
     supabase.from("reports").select("*"),
     supabase.from("report_activity").select("*").order("id"),
     supabase.from("app_users").select("persona_id, can_approve_closure").eq("auth_id", sess.session.user.id).maybeSingle(),
     supabase.from("patients").select("id, care_team"),
+    supabase.from("report_attachments").select("*").order("position"),
   ]);
-  if (e1 || e2 || e3 || e4) throw e1 ?? e2 ?? e3 ?? e4;
+  if (e1 || e2 || e3 || e4 || e5) throw e1 ?? e2 ?? e3 ?? e4 ?? e5;
   cachedPersonaId = me?.persona_id ?? null;
   // Admin-configurable values: mirror the live database so revocations / care-team changes show immediately.
   const meUser = userById(me?.persona_id);
@@ -132,6 +135,7 @@ async function doRefresh() {
       nurseAckBy: r.nurse_ack_by ?? undefined, nurseAckAt: r.nurse_ack_at ?? undefined, physicianAckBy: r.physician_ack_by ?? undefined, physicianAckAt: r.physician_ack_at ?? undefined,
       returnedBy: r.returned_by ?? undefined, returnedAt: r.returned_at ?? undefined, returnReason: r.return_reason ?? undefined, returnAckBy: r.return_ack_by ?? undefined, returnAckAt: r.return_ack_at ?? undefined,
       audioPath: r.audio_path ?? undefined, audioDurationS: r.audio_duration_s ?? undefined,
+      images: (attachments ?? []).filter(a => a.report_id === r.id).map(a => ({ id: a.id, path: a.path, position: a.position, mimeType: a.mime_type, sizeBytes: a.size_bytes })),
       activity: byReport.get(r.id) ?? [],
     })),
   };
@@ -243,23 +247,45 @@ async function rpcAction(id: string, action: Action, target?: string, note?: str
 // Every write is re-checked by the database (role, assignment, status). UI checks are only hints.
 export const AUDIO_MAX_S = 60;
 export const AUDIO_MAX_BYTES = 2 * 1024 * 1024;
-export async function submitReport(user: User, input: { pain: number; symptoms: Symptom[]; notes: string; audio?: { blob: Blob; durationS: number } | undefined }): Promise<Report> {
+export async function submitReport(user: User, input: { pain: number; symptoms: Symptom[]; notes: string; images?: File[]; onProgress?: (index: number, total: number) => void; audio?: { blob: Blob; durationS: number } | undefined }): Promise<Report> {
   const supabase = await sb();
+  if (!user.patientId || input.images?.some(file => !validImage(file))) throw new Error("image");
+  if (input.audio && (input.audio.blob.size > AUDIO_MAX_BYTES || input.audio.durationS < 1 || input.audio.durationS > AUDIO_MAX_S)) throw new Error("upload");
+  const uploaded: string[] = [];
+  for (const [index, file] of (input.images ?? []).entries()) {
+    input.onProgress?.(index + 1, (input.images?.length ?? 0) + (input.audio ? 1 : 0));
+    const path = `${user.patientId}/${crypto.randomUUID()}`;
+    const { error } = await supabase.storage.from("report-images").upload(path, file, { contentType: file.type, upsert: false });
+    if (error) { if (uploaded.length) await supabase.storage.from("report-images").remove(uploaded); throw new Error(`image-upload:${index + 1}`); }
+    uploaded.push(path);
+  }
   let audio: { p_audio_path: string; p_audio_duration: number; p_audio_mime: string } | {} = {};
   if (input.audio && user.patientId) {
+    input.onProgress?.(uploaded.length + 1, uploaded.length + 1);
     const mime = input.audio.blob.type.split(";")[0] || "audio/webm";
     const ext = mime === "audio/mp4" ? "m4a" : mime === "audio/ogg" ? "ogg" : mime === "audio/mpeg" ? "mp3" : "webm";
     const path = `${user.patientId}/${crypto.randomUUID()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("report-audio").upload(path, input.audio.blob, { contentType: mime });
-    if (upErr) throw new Error("upload");
+    if (upErr) { if (uploaded.length) await supabase.storage.from("report-images").remove(uploaded); throw new Error("upload"); }
     audio = { p_audio_path: path, p_audio_duration: Math.max(1, Math.min(AUDIO_MAX_S, Math.round(input.audio.durationS))), p_audio_mime: mime };
   }
-  const { data, error } = await supabase.rpc("submit_report", { p_pain: input.pain, p_symptoms: input.symptoms, p_notes: input.notes, ...audio });
-  if (error || !data) throw new Error("forbidden");
-  await refresh();
+  const { data, error } = await supabase.rpc("submit_report_multimodal", { p_pain: input.pain, p_symptoms: input.symptoms, p_notes: input.notes, p_images: uploaded.map(path => ({ path })), ...audio });
+  if (error || !data) {
+    // A transport failure may have committed: reconcile linked images, never auto-retry.
+    if (uploaded.length) {
+      const { data: linked } = await supabase.from("report_attachments").select("report_id").in("path", uploaded);
+      if (linked?.[0]) { await refresh(); const saved = cache.reports.find(r => r.id === linked[0]?.report_id); if (saved) return saved; }
+    }
+    throw new Error("uncertain");
+  }
+  try { await refresh(); } catch { throw new Error("saved-refresh"); }
   const report = cache.reports.find((r) => r.id === data);
   if (!report) throw new Error("report unavailable");
   return report;
+}
+export async function reportImageUrl(path: string) {
+  const supabase = await sb(); const { data, error } = await supabase.storage.from("report-images").createSignedUrl(path, 60);
+  if (error || !data) throw error ?? new Error("forbidden"); return data.signedUrl;
 }
 export const returnAcknowledge = (_u: User, id: string) => rpcAction(id, "returnAck");
 /** Eligible nurses for a return (assigned physician only): active, same org, on the care team. */
