@@ -10,14 +10,15 @@ function Preview({ file, label }: { file: File; label: string }) {
   useEffect(() => { const value = URL.createObjectURL(file); setUrl(value); return () => URL.revokeObjectURL(value); }, [file]);
   return url ? <img src={url} alt={label} className="aspect-square w-full rounded-md object-contain bg-muted" /> : null;
 }
-export function ReportImagePicker({ value, onChange, disabled }: { value: File[]; onChange: (files: File[]) => void; disabled: boolean }) {
+export function ReportImagePicker({ value, onChange, disabled, onValidatingChange }: { value: File[]; onChange: (files: File[]) => void; disabled: boolean; onValidatingChange?: (pending: boolean) => void }) {
   const { t } = useApp(); const m = t.media;
   const add = useRef<HTMLInputElement>(null); const replacement = useRef<HTMLInputElement>(null);
   const index = useRef(0); const [error, setError] = useState(false); const [validating, setValidating] = useState(false);
   async function accept(files: File[], replacing: boolean) {
-    setError(false); setValidating(true);
+    if (disabled || validating || !files.length) return;
+    setError(false); setValidating(true); onValidatingChange?.(true);
     try { for (const file of files) await decodeImage(file); onChange(replacing && files[0] ? replaceImage(value, index.current, files[0]) : [...value, ...files]); }
-    catch { setError(true); } finally { setValidating(false); }
+    catch { setError(true); } finally { setValidating(false); onValidatingChange?.(false); }
   }
   return <section className="card p-6"><h2 className="text-lg font-bold">{m.title}</h2>
     <input ref={add} aria-label={m.add} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={e => { void accept(Array.from(e.target.files ?? []), false); e.target.value = ""; }} />

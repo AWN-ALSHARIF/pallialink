@@ -42,6 +42,8 @@ function ReportPage() {
   const [notes, setNotes] = useState("");
   const [audio, setAudio] = useState<Recording | null>(null);
   const [images, setImages] = useState<File[]>([]);
+  const [validatingImages, setValidatingImages] = useState(false);
+  const [loadingAudio, setLoadingAudio] = useState(false);
   const [progress, setProgress] = useState("");
   const [blocked, setBlocked] = useState(false);
   useEffect(() => {
@@ -71,7 +73,7 @@ function ReportPage() {
 
   const toggle = (s: Symptom) => setSymptoms((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
   const submit = () => {
-    if (pain === null || busy || recording || blocked) return;
+    if (pain === null || busy || recording || blocked || validatingImages || loadingAudio) return;
     setBusy(true);
     submitReport(user, { pain, symptoms, notes, images, audio: audio ?? undefined, onProgress: (i, total) => setProgress(`${t.media.uploading} ${i}/${total}`) })
       .then(setDone, (e: Error) => {
@@ -115,11 +117,11 @@ function ReportPage() {
           <label htmlFor="notes" className="text-lg font-bold">{t.notes}</label>
           <textarea id="notes" rows={4} maxLength={1000} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.notesPh} className="field mt-3" />
         </section>
-        <ReportImagePicker value={images} onChange={setImages} disabled={busy || blocked} />
-        <section className="card p-6"><VoiceRecorder value={audio} onChange={setAudio} onRecordingChange={setRecording} disabled={busy || blocked} /></section>
+        <ReportImagePicker value={images} onChange={setImages} disabled={busy || blocked} onValidatingChange={setValidatingImages} />
+        <section className="card p-6"><VoiceRecorder value={audio} onChange={setAudio} onRecordingChange={setRecording} onLoadingChange={setLoadingAudio} disabled={busy || blocked} /></section>
         {busy && <p role="status">{progress || t.access.saving}</p>}
         {blocked && <p role="alert">{t.media.uncertain} <Link to="/my-reports" search={{ filter: "all" }}>{t.navigation.myReports}</Link></p>}
-        <Button disabled={pain === null || busy || recording || blocked} onClick={submit} className="min-h-14 w-full text-lg">{t.submit}</Button>
+        <Button disabled={pain === null || busy || recording || blocked || validatingImages || loadingAudio} onClick={submit} className="min-h-14 w-full text-lg">{t.submit}</Button>
         <Disclaimer />
       </div>
     </AppShell>

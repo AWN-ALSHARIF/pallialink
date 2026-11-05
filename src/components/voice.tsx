@@ -13,7 +13,7 @@ function pickMime() {
   return "";
 }
 
-export function VoiceRecorder({ value, onChange, onRecordingChange, disabled = false }: { value: Recording | null; onChange: (r: Recording | null) => void; onRecordingChange?: (recording: boolean) => void; disabled?: boolean }) {
+export function VoiceRecorder({ value, onChange, onRecordingChange, onLoadingChange, disabled = false }: { value: Recording | null; onChange: (r: Recording | null) => void; onRecordingChange?: (recording: boolean) => void; onLoadingChange?: (pending: boolean) => void; disabled?: boolean }) {
   const { t } = useApp();
   const [recording, setRecording] = useState(false);
   const [secs, setSecs] = useState(0);
@@ -25,9 +25,9 @@ export function VoiceRecorder({ value, onChange, onRecordingChange, disabled = f
   const audioInput = useRef<HTMLInputElement>(null);
   const [loadingFile, setLoadingFile] = useState(false);
   async function loadFile(file?: File) {
-    if (!file) return;
+    if (!file || disabled || loadingFile || recording) return;
     if (file.size > AUDIO_MAX_BYTES || !["audio/webm","audio/ogg","audio/mp4","audio/mpeg"].includes(file.type.split(";")[0] ?? "")) { setErr(t.media.invalidAudio); return; }
-    setLoadingFile(true); setErr(null);
+    setLoadingFile(true); onLoadingChange?.(true); setErr(null);
     const url = URL.createObjectURL(file); const element = document.createElement("audio"); element.preload = "metadata";
     try {
       const duration = await new Promise<number>((resolve, reject) => {
@@ -37,7 +37,7 @@ export function VoiceRecorder({ value, onChange, onRecordingChange, disabled = f
       });
       if (!Number.isFinite(duration) || duration < 1 || duration > AUDIO_MAX_S) throw new Error("audio");
       onChange({ blob: file, durationS: duration });
-    } catch { setErr(t.media.invalidAudio); } finally { element.removeAttribute("src"); element.load(); URL.revokeObjectURL(url); setLoadingFile(false); }
+    } catch { setErr(t.media.invalidAudio); } finally { element.removeAttribute("src"); element.load(); URL.revokeObjectURL(url); setLoadingFile(false); onLoadingChange?.(false); }
   }
   useEffect(() => { onRecordingChange?.(recording); return () => onRecordingChange?.(false); }, [recording, onRecordingChange]);
 
